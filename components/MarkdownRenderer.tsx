@@ -40,7 +40,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(({ content }) => 
           const isPreviewable = language === 'html' || language === 'xml' || language === 'svg';
 
           return (
-            <div key={blockIndex} className="my-4 overflow-hidden rounded-md border border-gray-200 dark:border-gray-800 bg-[#1e1e1e] shadow-md">
+            <div key={blockIndex} className="my-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-[#1e1e1e] shadow-md">
               <div className="flex justify-between items-center px-4 py-2 bg-[#2d2d2d] border-b border-white/5">
                 <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                   {language}
@@ -49,7 +49,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(({ content }) => 
                   {isPreviewable && (
                     <button 
                       onClick={() => handlePreview(code)}
-                      className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors"
+                      className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -60,7 +60,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(({ content }) => 
                   )}
                   <button 
                     onClick={() => handleCopy(code, blockIndex)}
-                    className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded bg-white/10 hover:bg-white/20 transition-colors text-gray-300"
+                    className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-gray-300"
                   >
                     {copiedIndex === blockIndex ? (
                       <span className="flex items-center gap-1 text-green-400">
@@ -107,7 +107,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(({ content }) => 
       {/* Live Preview Modal */}
       {previewContent && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-xl overflow-hidden shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col relative">
+          <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col relative">
              <div className="flex justify-between items-center p-3 bg-gray-100 border-b">
                <h3 className="font-bold text-gray-700 text-sm">Live Preview</h3>
                <button onClick={() => setPreviewContent(null)} className="text-gray-500 hover:text-red-500">
@@ -132,7 +132,7 @@ const parseInline = (text: string): React.ReactNode[] => {
   const parts = text.split(/(`[^`]+`)/g);
   return parts.flatMap((part, i) => {
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={`code-${i}`} className="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 mx-0.5 border border-gray-300 dark:border-gray-700">{part.slice(1, -1)}</code>;
+      return <code key={`code-${i}`} className="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded-lg text-sm font-mono text-pink-600 dark:text-pink-400 mx-0.5 border border-gray-300 dark:border-gray-700">{part.slice(1, -1)}</code>;
     }
     const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
     return boldParts.map((subPart, j) => {
