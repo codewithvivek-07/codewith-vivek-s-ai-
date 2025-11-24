@@ -22,12 +22,12 @@ const ADMIN_CODE = '000000';
 
 // Expanded Prompt Pool
 const MASTER_PROMPTS = [
-  { title: "Quantum Physics", prompt: "Explain quantum computing in simple terms:" },
-  { title: "Creative Writing", prompt: "Write a short sci-fi story about a robot who loves gardening:" },
-  { title: "Python Script", prompt: "Write a Python script to sort a list of dictionaries by a key:" },
-  { title: "Professional Email", prompt: "Draft a professional email to reschedule a meeting:" },
-  { title: "Study Plan", prompt: "Create a 1-week study plan for learning React basics:" },
-  { title: "Healthy Recipe", prompt: "Give me a healthy recipe using chicken and spinach:" },
+  { title: "QUANTUM_DATA", prompt: "Explain quantum computing in simple terms:" },
+  { title: "STORY_PROTOCOL", prompt: "Write a short sci-fi story about a robot who loves gardening:" },
+  { title: "PYTHON_SCRIPT", prompt: "Write a Python script to sort a list of dictionaries by a key:" },
+  { title: "COMMS_DRAFT", prompt: "Draft a professional email to reschedule a meeting:" },
+  { title: "LEARNING_MATRIX", prompt: "Create a 1-week study plan for learning React basics:" },
+  { title: "BIO_FUEL", prompt: "Give me a healthy recipe using chicken and spinach:" },
 ];
 
 export default function App() {
@@ -210,7 +210,7 @@ export default function App() {
     const welcomeMsg: Message = {
       id: 'boot',
       role: Role.MODEL,
-      text: `Hello! I am ${nameOverride || aiName}. How can I help you today?`,
+      text: `SYSTEM ONLINE. I am ${nameOverride || aiName}. Awaiting directives.`,
       timestamp: Date.now()
     };
     
@@ -231,7 +231,7 @@ export default function App() {
   };
 
   const deleteSession = (id: string) => {
-    if (confirm("Are you sure you want to delete this chat?")) {
+    if (confirm("PURGE SESSION DATA? This action is irreversible.")) {
       const newSessions = sessions.filter(s => s.id !== id);
       setSessions(newSessions);
       if (currentSessionId === id) {
@@ -271,7 +271,7 @@ export default function App() {
       setShowAdminInput(false);
       setAdminInputCode('');
     } else {
-      alert("Incorrect Code");
+      alert("ACCESS DENIED");
     }
   };
 
@@ -335,6 +335,17 @@ export default function App() {
   };
 
   // --- APP HANDLING ---
+  
+  // Helper to identify if the generated content is a web app
+  const isWebApp = (files: Record<string, string>) => {
+    return Object.keys(files).some(k => 
+      k.toLowerCase() === 'index.html' || 
+      k.toLowerCase() === 'index.htm' || 
+      k.toLowerCase() === 'main.html' || 
+      k.endsWith('.html')
+    );
+  };
+
   const handlePreviewApp = (files: Record<string, string>) => {
     setPreviewFiles(files);
     setIsPreviewOpen(true);
@@ -389,7 +400,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "source_code.zip";
+    a.download = isWebApp(files) ? "web_app.zip" : "android_project_source.zip";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -448,7 +459,7 @@ export default function App() {
           setMessages(prev => [...prev, {
             id: aiMsgId,
             role: Role.MODEL,
-            text: `Starting build for: "${prompt}"...`,
+            text: `INITIATING BUILD SEQUENCE: "${prompt}"...`,
             isStreaming: true,
             timestamp: Date.now()
           }]);
@@ -458,14 +469,14 @@ export default function App() {
             setMessages(prev => prev.map(msg => 
               msg.id === aiMsgId ? { 
                 ...msg, 
-                text: `App successfully built.`, 
+                text: `BUILD COMPLETE. ARTIFACTS READY.`, 
                 appContent: files,
                 isStreaming: false 
               } : msg
             ));
           } catch (err: any) {
             setMessages(prev => prev.map(msg => 
-              msg.id === aiMsgId ? { ...msg, text: `Build failed: ${err.message}`, isStreaming: false } : msg
+              msg.id === aiMsgId ? { ...msg, text: `BUILD FAILED: ${err.message}`, isStreaming: false } : msg
             ));
           }
           setIsLoading(false);
@@ -482,13 +493,13 @@ export default function App() {
           setMessages(prev => [...prev, {
             id: aiMsgId,
             role: Role.MODEL,
-            text: `Generating document (${format})...`,
+            text: `GENERATING DATA STREAM (${format})...`,
             isStreaming: true,
             timestamp: Date.now()
           }]);
           
           await generateDocument(prompt, format, isAdmin);
-          setMessages(prev => prev.map(m => m.id === aiMsgId ? {...m, text: `Document generated.`, isStreaming: false} : m));
+          setMessages(prev => prev.map(m => m.id === aiMsgId ? {...m, text: `DATA GENERATION COMPLETE.`, isStreaming: false} : m));
           setIsLoading(false);
           return;
         }
@@ -500,7 +511,7 @@ export default function App() {
           setMessages(prev => [...prev, {
             id: aiMsgId,
             role: Role.MODEL,
-            text: `Creating image: "${prompt}"...`,
+            text: `RENDERING VISUAL ASSETS: "${prompt}"...`,
             isStreaming: true,
             timestamp: Date.now()
           }]);
@@ -511,7 +522,7 @@ export default function App() {
               msg.id === aiMsgId 
                 ? { 
                     ...msg, 
-                    text: `Image generated.`, 
+                    text: `VISUALS RENDERED.`, 
                     images: base64Images,
                     image: base64Images[0], 
                     isStreaming: false 
@@ -520,7 +531,7 @@ export default function App() {
             ));
           } catch (err: any) {
             setMessages(prev => prev.map(msg => 
-              msg.id === aiMsgId ? { ...msg, text: `Image creation failed: ${err.message}`, isStreaming: false } : msg
+              msg.id === aiMsgId ? { ...msg, text: `RENDER FAILED: ${err.message}`, isStreaming: false } : msg
             ));
           }
           setIsLoading(false);
@@ -556,7 +567,7 @@ export default function App() {
           },
           (error) => {
             setMessages(prev => prev.map(msg => 
-              msg.id === aiMsgId ? { ...msg, text: "Error: " + error.message, isStreaming: false } : msg
+              msg.id === aiMsgId ? { ...msg, text: "SYSTEM ERROR: " + error.message, isStreaming: false } : msg
             ));
             setIsLoading(false);
           },
@@ -579,38 +590,38 @@ export default function App() {
 
   const isTyping = input.trim().length > 0;
 
-  // Modern Color Palette (No more hard black/neon terminal)
+  // NEON CYBERPUNK PALETTE MAPPING
   const themeColors = {
-     bg: 'bg-black',
-     sidebar: 'bg-black',
-     // Dynamic Borders
-     border: isAdmin ? 'border-red-500/30' : 'border-primary-500/30',
+     bg: 'bg-[#050510]',
+     sidebar: 'bg-[#0a0a1a]',
+     
+     // Dynamic Borders (Glowing)
+     border: isAdmin ? 'neon-border-red' : 'neon-border-cyan',
      
      // Text Colors
-     text: isAdmin ? 'text-red-500' : 'text-primary-400',
-     textBold: isAdmin ? 'text-red-400' : 'text-primary-300',
+     text: isAdmin ? 'text-neon-red text-glow-red' : 'text-neon-cyan text-glow-cyan',
+     textBold: isAdmin ? 'text-white' : 'text-white',
      
-     // Interactions
+     // Interactions / Buttons
      button: isAdmin 
-        ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/20' 
-        : 'bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-900/20',
+        ? 'bg-admin-600 hover:bg-admin-500 text-white btn-3d' 
+        : 'bg-primary-600 hover:bg-primary-500 text-white btn-3d',
      
-     // Chat Bubbles (Rounded, Glassy)
+     // Chat Bubbles (3D Panels)
      userBubble: isAdmin 
-        ? 'bg-red-600 text-white rounded-2xl rounded-tr-sm' 
-        : 'bg-primary-600 text-white rounded-2xl rounded-tr-sm',
+        ? 'bg-gradient-to-r from-red-900 to-gray-900 border border-red-500/50 shadow-neon-red' 
+        : 'bg-gradient-to-r from-cyan-900 to-blue-900 border border-cyan-500/50 shadow-neon-cyan',
         
-     aiBubble: isAdmin 
-        ? 'bg-gray-900/80 border border-red-500/20 text-gray-100 rounded-2xl rounded-tl-sm backdrop-blur-sm' 
-        : 'bg-gray-900/80 border border-primary-500/20 text-gray-100 rounded-2xl rounded-tl-sm backdrop-blur-sm',
+     aiBubble: 'glass-panel text-gray-100', // Unified Glass style for AI
 
      // Accents
-     accent: isAdmin ? 'text-red-500' : 'text-primary-500',
-     glow: isAdmin ? 'shadow-glow-red' : 'shadow-glow-green',
+     accent: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
+     glow: isAdmin ? 'shadow-neon-red' : 'shadow-neon-cyan',
+     ring: isAdmin ? 'focus:ring-neon-red' : 'focus:ring-neon-cyan',
   };
 
   return (
-    <div className={`flex h-screen font-sans overflow-hidden bg-black text-gray-100 transition-colors duration-300`}>
+    <div className={`flex h-screen font-sans overflow-hidden bg-[#050510] text-gray-100 transition-colors duration-300`}>
       
       <Sidebar 
         sessions={sessions}
@@ -623,23 +634,23 @@ export default function App() {
         isAdmin={isAdmin}
       />
 
-      <div className={`flex-1 flex flex-col h-full relative z-10 min-w-0 bg-black overflow-hidden`}>
+      <div className={`flex-1 flex flex-col h-full relative z-10 min-w-0 bg-[#050510]/90`}>
         
-        {/* Header */}
-        <header className={`flex-none h-16 px-6 flex items-center justify-between z-20 border-b ${themeColors.border} bg-black/50 backdrop-blur-md`}>
+        {/* Header - Glass Bar */}
+        <header className={`flex-none h-16 px-6 flex items-center justify-between z-20 border-b border-white/10 glass-panel`}>
           <div className="flex items-center gap-4">
              {/* Sidebar Toggle Button */}
-             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400`}>
+             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-lg hover:bg-white/10 transition-colors ${themeColors.text}`}>
                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                </svg>
              </button>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isAdmin ? 'bg-red-500/20 text-red-500' : 'bg-primary-500/20 text-primary-500'}`}>
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <div className={`w-10 h-10 rounded border ${isAdmin ? 'border-neon-red shadow-neon-red' : 'border-neon-cyan shadow-neon-cyan'} flex items-center justify-center bg-black`}>
+               <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${themeColors.accent}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                 <h1 className="font-bold text-lg text-gray-100 tracking-tight">{aiName}</h1>
+                 <h1 className={`font-bold text-lg tracking-widest uppercase ${themeColors.text}`}>{aiName}</h1>
                  <button onClick={() => { setTempNameInput(aiName); setIsNaming(true); }} className={`opacity-50 hover:opacity-100 transition-opacity`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -647,9 +658,9 @@ export default function App() {
                  </button>
               </div>
               <div className="flex items-center gap-2">
-                 <div className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-red-500' : 'bg-primary-500'}`}></div>
-                 <span className={`text-xs font-medium ${isAdmin ? 'text-red-400' : 'text-primary-400'}`}>
-                   {isAdmin ? 'Admin Mode' : 'Online'}
+                 <div className={`w-2 h-2 rounded-full ${isAdmin ? 'bg-neon-red animate-pulse-fast' : 'bg-neon-cyan animate-pulse-fast'}`}></div>
+                 <span className={`text-[10px] font-mono tracking-widest uppercase ${isAdmin ? 'text-neon-red' : 'text-neon-cyan'}`}>
+                   {isAdmin ? 'ROOT_ACCESS_GRANTED' : 'SYSTEM_ONLINE'}
                  </span>
               </div>
             </div>
@@ -660,52 +671,46 @@ export default function App() {
             {/* Admin Toggle */}
             <button 
               onClick={toggleAdmin} 
-              className={`p-2 rounded-lg transition-all duration-200 ${isAdmin ? 'text-red-500 bg-red-500/10' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+              className={`p-2 rounded transition-all duration-200 border border-transparent ${isAdmin ? 'text-neon-red shadow-neon-red border-neon-red bg-red-900/20' : 'text-gray-500 hover:text-neon-cyan hover:shadow-neon-cyan'}`}
             >
-              {isAdmin ? (
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                 </svg>
-              ) : (
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                 </svg>
-              )}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </button>
 
-            <button onClick={() => setShowSettings(true)} className={`p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all`} title="Settings">
+            <button onClick={() => setShowSettings(true)} className={`p-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all`} title="Settings">
                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
-            <button onClick={() => setIsModalOpen(true)} className={`p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all`} title="Info">
+            <button onClick={() => setIsModalOpen(true)} className={`p-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all`} title="Info">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </button>
           </div>
         </header>
 
         {/* Chat Area */}
-        <main ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth bg-black relative">
+        <main ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 scroll-smooth relative">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col max-w-4xl mx-auto ${msg.role === Role.USER ? 'items-end' : 'items-start'}`}>
-              <div className="flex items-end gap-3 max-w-full group relative">
+              <div className="flex items-end gap-4 max-w-full group relative">
                 
                 {msg.role === Role.MODEL && (
-                   <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isAdmin ? 'bg-red-500/20 text-red-500' : 'bg-primary-500/20 text-primary-500'}`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clipRule="evenodd" /></svg>
+                   <div className={`w-10 h-10 rounded border ${isAdmin ? 'border-neon-red shadow-neon-red' : 'border-neon-cyan shadow-neon-cyan'} bg-black flex-shrink-0 flex items-center justify-center`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${themeColors.accent}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clipRule="evenodd" /></svg>
                    </div>
                 )}
                 
-                {/* Message Bubble */}
-                <div className={`relative px-5 py-4 text-sm md:text-base leading-relaxed shadow-md
+                {/* Message Bubble - 3D Panel */}
+                <div className={`relative px-6 py-5 text-sm md:text-base leading-relaxed
                   ${msg.role === Role.USER 
-                    ? `${themeColors.userBubble} max-w-[85%]` 
-                    : `${themeColors.aiBubble} w-full`
-                  } group`}>
+                    ? `${themeColors.userBubble} max-w-[85%] rounded-tl-xl rounded-bl-xl rounded-tr-sm rounded-br-xl transform hover:-translate-y-1 transition-transform duration-300` 
+                    : `${themeColors.aiBubble} w-full rounded-tr-xl rounded-br-xl rounded-tl-sm rounded-bl-xl`
+                  } group shadow-3d`}>
                   
                   {/* Listen Button - Top Right of Bubble */}
                   {msg.role === Role.MODEL && !msg.isStreaming && (
                     <button 
                       onClick={() => speakText(msg.text)} 
-                      className={`absolute -top-3 right-4 p-1.5 bg-gray-800 rounded-full border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-all shadow-sm`}
+                      className={`absolute -top-3 right-4 p-1 bg-black rounded border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-all shadow-sm`}
                       title="Listen"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -716,16 +721,16 @@ export default function App() {
 
                   {/* Attachments */}
                   {msg.attachment && (
-                    <div className="mb-4 overflow-hidden rounded-lg border border-white/10">
-                      <img src={`data:${msg.attachmentMimeType};base64,${msg.attachment}`} alt="Upload" className="max-h-60 w-auto object-cover" />
+                    <div className="mb-4 overflow-hidden rounded border border-white/20">
+                      <img src={`data:${msg.attachmentMimeType};base64,${msg.attachment}`} alt="Upload" className="max-h-60 w-auto object-cover opacity-80 hover:opacity-100 transition-opacity" />
                     </div>
                   )}
                   {msg.fileContent && (
-                    <div className="mb-4 p-3 bg-black/20 rounded-lg border border-white/10 flex items-center gap-3">
+                    <div className="mb-4 p-3 bg-black/40 rounded border border-white/20 flex items-center gap-3 font-mono text-xs">
                        <div className="p-2 bg-white/10 rounded">
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" /></svg>
                        </div>
-                       <div className="truncate text-sm opacity-90">{msg.fileName}</div>
+                       <div className="truncate opacity-90">{msg.fileName}</div>
                     </div>
                   )}
 
@@ -733,10 +738,10 @@ export default function App() {
                   {msg.images && msg.images.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       {msg.images.map((imgSrc, imgIdx) => (
-                        <div key={imgIdx} className="relative group/img overflow-hidden rounded-xl border border-white/10">
+                        <div key={imgIdx} className="relative group/img overflow-hidden rounded border border-white/20 shadow-neon-cyan">
                           <img src={imgSrc} alt="Generated" className="w-full h-auto transition-transform duration-500 group-hover/img:scale-105" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                             <button onClick={() => {const link = document.createElement('a'); link.href = imgSrc; link.download = 'generated_image.png'; link.click();}} className="bg-white text-black text-xs px-4 py-2 rounded-full font-bold hover:bg-gray-200">Download</button>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                             <button onClick={() => {const link = document.createElement('a'); link.href = imgSrc; link.download = 'generated_image.png'; link.click();}} className="bg-white text-black text-xs px-4 py-2 rounded font-bold hover:bg-neon-cyan hover:text-black shadow-lg">DOWNLOAD_ASSET</button>
                           </div>
                         </div>
                       ))}
@@ -745,22 +750,45 @@ export default function App() {
 
                   {/* Generated App Card */}
                   {msg.appContent && (
-                    <div className={`my-4 overflow-hidden rounded-xl border ${themeColors.border} bg-black/30`}>
-                      <div className="p-4 flex items-center gap-4 border-b border-white/10">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isAdmin ? 'bg-red-500/20 text-red-500' : 'bg-primary-500/20 text-primary-500'}`}>
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                           </svg>
+                    <div className={`my-4 overflow-hidden rounded border bg-[#101015] shadow-lg relative ${isAdmin ? 'border-neon-red' : 'border-neon-cyan'}`}>
+                      {/* Decorative Corner */}
+                      <div className={`absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 ${isAdmin ? 'border-neon-red' : 'border-neon-cyan'}`}></div>
+                      
+                      <div className="p-4 flex items-center gap-4 border-b border-white/5 bg-white/5">
+                        <div className={`w-12 h-12 rounded flex items-center justify-center bg-black border ${isAdmin ? 'border-neon-red text-neon-red shadow-neon-red' : 'border-neon-cyan text-neon-cyan shadow-neon-cyan'}`}>
+                           {/* Icon changes based on App Type (Web vs Native) */}
+                           {isWebApp(msg.appContent) ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                              </svg>
+                           ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                           )}
                         </div>
                         <div>
-                          <h3 className="font-bold text-gray-100 text-lg">App Generated</h3>
-                          <p className="text-xs text-gray-400">{Object.keys(msg.appContent).length} files ready</p>
+                          <h3 className="font-bold text-gray-100 text-lg font-mono tracking-wide">
+                            {isWebApp(msg.appContent) ? 'WEB_MODULE_READY' : 'ANDROID_PROJECT_READY'}
+                          </h3>
+                          <p className="text-xs text-gray-500 font-mono">{Object.keys(msg.appContent).length} FILES COMPILED</p>
                         </div>
                       </div>
                       <div className="p-4 grid grid-cols-3 gap-3">
-                           <button onClick={() => handlePreviewApp(msg.appContent!)} className={`py-2 px-3 rounded-lg ${themeColors.button} text-xs font-bold`}>Run App</button>
-                           <button onClick={() => handleOpenInNewTab(msg.appContent!)} className="py-2 px-3 rounded-lg border border-gray-600 text-gray-300 hover:bg-white/5 text-xs font-bold">New Tab</button>
-                           <button onClick={() => handleDownloadZip(msg.appContent!)} className="py-2 px-3 rounded-lg border border-gray-600 text-gray-300 hover:bg-white/5 text-xs font-bold">Download</button>
+                           {isWebApp(msg.appContent) ? (
+                                <>
+                                  <button onClick={() => handlePreviewApp(msg.appContent!)} className={`py-2 px-3 rounded font-mono text-xs font-bold ${themeColors.button}`}>RUN_APP</button>
+                                  <button onClick={() => handleOpenInNewTab(msg.appContent!)} className="py-2 px-3 rounded border border-gray-600 text-gray-400 hover:text-white hover:border-white text-xs font-bold font-mono transition-colors">NEW_TAB</button>
+                                  <button onClick={() => handleDownloadZip(msg.appContent!)} className="py-2 px-3 rounded border border-gray-600 text-gray-400 hover:text-white hover:border-white text-xs font-bold font-mono transition-colors">ZIP</button>
+                                </>
+                           ) : (
+                                <>
+                                  <div className="col-span-2 flex items-center justify-center text-xs text-gray-500 bg-white/5 rounded border border-white/5 italic font-mono">
+                                     NO_PREVIEW_AVAILABLE
+                                  </div>
+                                  <button onClick={() => handleDownloadZip(msg.appContent!)} className={`py-2 px-3 rounded font-mono text-xs font-bold ${themeColors.button}`}>DOWNLOAD_APK_SRC</button>
+                                </>
+                           )}
                       </div>
                     </div>
                   )}
@@ -768,12 +796,12 @@ export default function App() {
                   <div className="markdown-content">
                     {msg.role === Role.MODEL ? (
                        msg.isStreaming && !msg.text ? (
-                         <div className="flex items-center gap-2 text-gray-400">
-                            <span className="text-sm">Thinking</span>
+                         <div className="flex items-center gap-2 text-gray-500 font-mono text-xs">
+                            <span className="animate-pulse">PROCESSING_DATA</span>
                             <div className="flex space-x-1">
-                                <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-                                <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                             </div>
                          </div>
                        ) : (
@@ -784,12 +812,12 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Inline Resources Display - Modern Cards */}
+                  {/* Inline Resources Display - Cyber Cards */}
                   {msg.groundingSources && msg.groundingSources.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                      <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 opacity-70 flex items-center gap-2 ${isAdmin ? 'text-red-400' : 'text-primary-400'}`}>
+                    <div className="mt-6 pt-4 border-t border-white/10">
+                      <h4 className={`text-xs font-bold uppercase tracking-widest mb-3 opacity-70 flex items-center gap-2 ${themeColors.accent}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
-                        Sources
+                        DATA_SOURCES
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {msg.groundingSources.map((source, idx) => (
@@ -798,13 +826,13 @@ export default function App() {
                             href={source.uri} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className={`block p-3 rounded-xl bg-black/20 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group/link`}
+                            className={`block p-3 rounded bg-black/40 border border-white/10 hover:border-white/40 hover:bg-white/5 transition-all group/link relative overflow-hidden`}
                           >
-                            <div className={`text-xs font-bold truncate ${themeColors.text} mb-0.5`}>
+                            <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${isAdmin ? 'bg-neon-red' : 'bg-neon-cyan'} opacity-50`}></div>
+                            <div className={`text-xs font-bold truncate ${themeColors.accent} mb-0.5 group-hover/link:underline`}>
                               {source.title}
                             </div>
-                            <div className="text-[10px] text-gray-500 truncate flex items-center gap-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                            <div className="text-[10px] text-gray-500 truncate flex items-center gap-1 font-mono">
                               {new URL(source.uri).hostname}
                             </div>
                           </a>
@@ -817,7 +845,7 @@ export default function App() {
 
                 {/* User Message Action Toolbar */}
                 {msg.role === Role.USER && (
-                  <div className={`absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center gap-1 bg-gray-900 border border-gray-700 rounded-lg p-1 z-10 shadow-lg`}>
+                  <div className={`absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center gap-1 bg-black border border-gray-700 rounded p-1 z-10 shadow-lg`}>
                     <button 
                       onClick={() => handleEditText(msg.text)} 
                       className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded"
@@ -847,33 +875,33 @@ export default function App() {
           <div ref={messagesEndRef} className="h-4" />
         </main>
 
-        {/* Input Area */}
-        <footer className={`flex-none p-4 sm:p-6 z-20 bg-black/80 backdrop-blur border-t ${themeColors.border}`}>
+        {/* Input Area - Floating 3D Bar */}
+        <footer className={`flex-none p-4 sm:p-6 z-20`}>
           <div className="max-w-4xl mx-auto relative">
             
             {/* Popups */}
             {showCommandMenu && (
-              <div ref={commandMenuRef} className={`absolute bottom-full left-0 mb-4 bg-gray-900 border border-gray-700 rounded-xl w-64 shadow-2xl overflow-hidden animate-fade-in z-50`}>
-                 <div className="bg-gray-800/50 px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-700">Commands</div>
-                 <button onClick={() => {setInput('/make '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-sm text-left text-gray-200 transition-colors">
-                   <span className={themeColors.text}>/make</span>
+              <div ref={commandMenuRef} className={`absolute bottom-full left-0 mb-4 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-lg w-64 shadow-2xl overflow-hidden animate-fade-in z-50`}>
+                 <div className="bg-gray-800/50 px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-700 font-mono">Available Commands</div>
+                 <button onClick={() => {setInput('/make '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-sm text-left text-gray-200 transition-colors">
+                   <span className={`font-mono ${themeColors.accent}`}>/make</span>
                    <span>Generate Document</span>
                  </button>
-                 <button onClick={() => {setInput('/image '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-sm text-left text-gray-200 transition-colors">
-                   <span className={themeColors.text}>/image</span>
+                 <button onClick={() => {setInput('/image '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-sm text-left text-gray-200 transition-colors">
+                   <span className={`font-mono ${themeColors.accent}`}>/image</span>
                    <span>Create Image</span>
                  </button>
-                 <button onClick={() => {setInput('/build '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-sm text-left text-gray-200 transition-colors">
-                   <span className={themeColors.text}>/build</span>
-                   <span>Build Web App</span>
+                 <button onClick={() => {setInput('/build '); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-sm text-left text-gray-200 transition-colors">
+                   <span className={`font-mono ${themeColors.accent}`}>/build</span>
+                   <span>Build Web App / APK</span>
                  </button>
               </div>
             )}
 
             {showPromptMenu && (
-              <div ref={promptMenuRef} className={`absolute bottom-full right-0 mb-4 bg-gray-900 border border-gray-700 rounded-xl w-72 shadow-2xl overflow-hidden animate-fade-in z-50`}>
+              <div ref={promptMenuRef} className={`absolute bottom-full right-0 mb-4 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-lg w-72 shadow-2xl overflow-hidden animate-fade-in z-50`}>
                  <div className="flex justify-between items-center px-4 py-2 border-b border-gray-700 bg-gray-800/50">
-                   <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ideas</div>
+                   <div className="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Suggested Inputs</div>
                    <button onClick={shufflePrompts} className={`text-gray-400 hover:text-white`}>
                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                    </button>
@@ -881,8 +909,8 @@ export default function App() {
                  <div className="max-h-64 overflow-y-auto">
                    {visiblePrompts.map((p, i) => (
                      <button key={i} onClick={() => {setInput(p.prompt); setShowPromptMenu(false);}} className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors border-b border-gray-800 last:border-0 group">
-                       <div className={`font-semibold text-gray-200 text-sm mb-0.5 group-hover:${themeColors.accent}`}>{p.title}</div>
-                       <div className="text-xs text-gray-500 truncate">{p.prompt}</div>
+                       <div className={`font-bold font-mono text-sm mb-0.5 ${themeColors.accent}`}>{p.title}</div>
+                       <div className="text-xs text-gray-400 truncate font-sans">{p.prompt}</div>
                      </button>
                    ))}
                  </div>
@@ -892,157 +920,220 @@ export default function App() {
             {/* Attachments & Stop Button */}
             <div className="absolute bottom-full left-0 mb-4 flex gap-3 z-30">
                {isSpeaking && (
-                 <button onClick={stopSpeaking} className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg animate-pulse">
+                 <button onClick={stopSpeaking} className="flex items-center gap-2 px-4 py-2 bg-red-600/80 backdrop-blur border border-red-500 text-white rounded-lg text-xs font-bold shadow-neon-red animate-pulse-fast uppercase tracking-wider">
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" /></svg>
-                   Stop Speaking
+                   HALT_AUDIO
                  </button>
                )}
                {(attachment || fileContext) && (
-                  <div className="p-2 bg-gray-800 border border-gray-600 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg">
+                  <div className={`p-2 bg-gray-900 border ${themeColors.border} rounded-lg flex items-center gap-3 animate-fade-in shadow-lg`}>
                     {attachment ? (
-                      <img src={`data:${attachment.mimeType};base64,${attachment.data}`} className="w-10 h-10 object-cover rounded-lg" alt="preview" />
+                      <img src={`data:${attachment.mimeType};base64,${attachment.data}`} className="w-10 h-10 object-cover rounded" alt="preview" />
                     ) : (
-                      <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400">FILE</div>
+                      <div className="w-10 h-10 bg-white/10 rounded flex items-center justify-center text-xs font-bold text-gray-400 font-mono">FILE</div>
                     )}
                     <div className="flex flex-col">
-                       <span className={`text-[10px] ${themeColors.accent} font-bold uppercase`}>Attached</span>
-                       <span className="text-xs text-gray-300 truncate max-w-[100px]">{fileContext?.name || "Image"}</span>
+                       <span className={`text-[10px] ${themeColors.accent} font-bold uppercase tracking-wider`}>Attached</span>
+                       <span className="text-xs text-gray-300 truncate max-w-[100px] font-mono">{fileContext ? fileContext.name : 'Image'}</span>
                     </div>
-                    <button onClick={() => {setAttachment(null); setFileContext(null);}} className="p-1 hover:bg-white/10 rounded-full text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
+                    <button onClick={() => {setAttachment(null); setFileContext(null);}} className="p-1 hover:bg-white/10 rounded-full text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                   </div>
                )}
             </div>
 
-            {/* INPUT BAR */}
-            <div className={`bg-gray-900/50 backdrop-blur border ${themeColors.border} rounded-2xl p-2 flex items-end shadow-lg transition-all focus-within:ring-1 ${isAdmin ? 'focus-within:ring-red-500/50' : 'focus-within:ring-primary-500/50'}`}>
+            {/* Main Input Bar */}
+            <div className={`relative flex items-center gap-3 p-2 rounded-xl border transition-all duration-300 shadow-2xl glass-panel ${themeColors.border} ${isTyping ? themeColors.glow : ''}`}>
               
-              {/* Dynamic Option Buttons - Hide when typing */}
-              {!isTyping && (
-                <>
-                  <button onClick={() => setShowCommandMenu(!showCommandMenu)} className="flex-none mb-0.5 mr-1 p-3 rounded-xl text-gray-500 hover:bg-white/10 hover:text-white transition-colors" title="Commands">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                  </button>
+              {/* Command Trigger */}
+              <button 
+                onClick={() => setShowCommandMenu(!showCommandMenu)}
+                className={`p-3 rounded-lg transition-colors flex-shrink-0 ${themeColors.accent} hover:bg-white/10`}
+                title="Commands"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </button>
 
-                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.txt,.js,.py,.html,.css,.json,.md,.csv" className="hidden" />
-                  <button onClick={() => fileInputRef.current?.click()} className="flex-none mb-0.5 ml-1 p-3 rounded-xl text-gray-500 hover:bg-white/10 hover:text-white transition-colors" title="Upload">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                  </button>
+              {/* File Upload */}
+              <div className="relative">
+                 <input 
+                   type="file" 
+                   ref={fileInputRef}
+                   className="hidden" 
+                   onChange={handleFileUpload}
+                   multiple={false}
+                 />
+                 <button 
+                   onClick={() => fileInputRef.current?.click()}
+                   className={`p-3 rounded-lg transition-colors flex-shrink-0 text-gray-400 hover:text-white hover:bg-white/10`}
+                   title="Upload File/Image"
+                 >
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                   </svg>
+                 </button>
+              </div>
 
-                  <button onClick={() => setShowPromptMenu(!showPromptMenu)} className="flex-none mb-0.5 ml-1 p-3 rounded-xl text-gray-500 hover:bg-white/10 hover:text-white transition-colors" title="Prompts">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                  </button>
-
-                  {settings.voiceEnabled && (
-                    <button onClick={toggleRecording} className={`flex-none mb-0.5 ml-1 p-3 rounded-xl transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-gray-500 hover:bg-white/10 hover:text-white'}`}>
-                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                    </button>
-                  )}
-                </>
-              )}
-
-              <textarea
+              <input
+                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Ask anything..."
-                className={`w-full bg-transparent border-none text-base p-3 focus:ring-0 resize-none max-h-40 min-h-[52px] text-gray-100 placeholder-gray-500`}
-                rows={1}
+                onKeyDown={(e) => {
+                   if(e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                   }
+                }}
+                placeholder={isAdmin ? "ENTER ROOT COMMAND..." : "Input directive..."}
+                className={`flex-1 bg-transparent border-none focus:ring-0 text-base md:text-lg placeholder-gray-600 font-sans tracking-wide ${themeColors.text}`}
                 disabled={isLoading}
               />
-              
-              <button
+
+              {/* Mic */}
+              <button 
+                onClick={toggleRecording}
+                className={`p-3 rounded-lg transition-colors flex-shrink-0 ${isRecording ? 'bg-red-500 text-white animate-pulse-fast shadow-neon-red' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                 </svg>
+              </button>
+
+              {/* Send */}
+              <button 
                 onClick={() => handleSend()}
                 disabled={(!input.trim() && !attachment && !fileContext) || isLoading}
-                className={`flex-none mb-0.5 mr-0.5 p-3 rounded-xl transition-all duration-300
-                  ${(!input.trim() && !attachment && !fileContext) || isLoading
-                    ? 'opacity-30 cursor-not-allowed text-gray-500' 
-                    : `${themeColors.button}`}`}
+                className={`p-3 rounded-lg transition-all flex-shrink-0 shadow-lg btn-3d
+                   ${(!input.trim() && !attachment && !fileContext) || isLoading
+                     ? 'bg-gray-800 text-gray-600 cursor-not-allowed shadow-none transform-none' 
+                     : `${themeColors.button}`
+                   }`}
               >
-                {isLoading ? <div className="animate-spin h-6 w-6 border-2 border-transparent border-t-current rounded-full"></div> : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>}
+                {isLoading ? (
+                   <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                   </svg>
+                ) : (
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                   </svg>
+                )}
               </button>
+
+            </div>
+            <div className="text-center mt-2">
+               <button onClick={() => setShowPromptMenu(!showPromptMenu)} className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors uppercase tracking-[0.2em] font-semibold">
+                 Open_Suggestions
+               </button>
             </div>
           </div>
         </footer>
 
-        {/* Settings Modal */}
-        {showSettings && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className={`bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full shadow-2xl relative`}>
-               <h3 className="text-xl font-bold mb-6 text-white">System Configuration</h3>
-               <div className="space-y-6">
-                 <div>
-                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">AI Persona</label>
-                   <textarea 
-                     value={settings.customPersona} 
-                     onChange={(e) => setSettings({...settings, customPersona: e.target.value})}
-                     className={`w-full p-4 bg-black/50 border border-gray-700 rounded-xl text-sm h-32 focus:ring-1 focus:ring-primary-500 outline-none text-gray-300 placeholder-gray-600 resize-none`}
-                     placeholder="Define how the AI behaves..."
-                   />
-                 </div>
-                 <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                   <span className="font-medium text-gray-300">Voice Input</span>
-                   <button onClick={() => setSettings({...settings, voiceEnabled: !settings.voiceEnabled})} className={`w-12 h-6 rounded-full p-1 transition-all ${settings.voiceEnabled ? 'bg-primary-600' : 'bg-gray-700'}`}>
-                     <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${settings.voiceEnabled ? 'translate-x-6' : ''}`}></div>
-                   </button>
-                 </div>
-                 <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                   <span className="font-medium text-gray-300">Auto Read Aloud</span>
-                   <button onClick={() => setSettings({...settings, autoRead: !settings.autoRead})} className={`w-12 h-6 rounded-full p-1 transition-all ${settings.autoRead ? 'bg-primary-600' : 'bg-gray-700'}`}>
-                     <div className={`w-4 h-4 rounded-full bg-white transform transition-transform ${settings.autoRead ? 'translate-x-6' : ''}`}></div>
-                   </button>
-                 </div>
-               </div>
-               <div className="flex gap-4 mt-8">
-                  <button onClick={() => setShowSettings(false)} className="flex-1 py-3 border border-gray-700 rounded-xl text-gray-400 hover:bg-white/5 transition-colors font-bold text-xs uppercase">Close</button>
-                  <button onClick={() => setShowSettings(false)} className={`flex-1 py-3 rounded-xl ${themeColors.button} font-bold text-xs uppercase`}>Save</button>
-               </div>
-            </div>
-          </div>
-        )}
+      </div>
 
-        {/* Naming Modal */}
-        {isNaming && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className={`bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-sm w-full shadow-2xl`}>
-               <h3 className="text-lg font-bold text-center mb-6 text-white">Rename AI</h3>
-               <div className="space-y-6">
-                 <input type="text" value={tempNameInput} onChange={(e) => setTempNameInput(e.target.value)} className={`w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl text-center outline-none focus:border-primary-500 text-white font-bold`} autoFocus />
-                 <div className="flex gap-3">
-                   <button onClick={() => setIsNaming(false)} className="flex-1 py-3 border border-gray-700 rounded-xl text-gray-400 hover:bg-white/5 text-xs font-bold uppercase">Cancel</button>
-                   <button onClick={handleNameSave} className={`flex-1 py-3 rounded-xl ${themeColors.button} font-bold text-xs uppercase`}>Save</button>
-                 </div>
-               </div>
-            </div>
-          </div>
-        )}
+      {/* Modals */}
+      <ApkGuideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isAdmin={isAdmin} />
+      <AppPreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} files={previewFiles} isAdmin={isAdmin} />
 
-        <ApkGuideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isAdmin={isAdmin} />
-        <AppPreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} files={previewFiles} />
-        
-        {/* Admin Login Modal */}
-        {showAdminInput && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className="bg-gray-900 border border-red-900/50 rounded-2xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden">
-               <div className="text-center mb-8 relative z-10">
-                 <div className="w-16 h-16 bg-red-500/10 rounded-full mx-auto mb-4 text-red-500 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                 </div>
-                 <h3 className="text-xl font-bold text-white">Admin Access</h3>
-                 <p className="text-xs text-red-400 mt-2">Restricted Area</p>
+      {/* Admin Code Modal */}
+      {showAdminInput && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-black border border-red-500 rounded-xl p-8 max-w-sm w-full shadow-neon-red relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse-fast"></div>
+               <div className="flex justify-center mb-6 text-red-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                </div>
-               <form onSubmit={handleAdminSubmit} className="space-y-4 relative z-10">
-                 <input type="password" value={adminInputCode} onChange={(e) => setAdminInputCode(e.target.value)} className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded-xl text-center text-lg outline-none focus:border-red-500 text-white placeholder-gray-600 tracking-widest" placeholder="Passcode" autoFocus />
-                 <div className="flex gap-3 pt-2">
-                   <button type="button" onClick={() => setShowAdminInput(false)} className="flex-1 py-3 border border-gray-700 rounded-xl text-gray-400 hover:bg-white/5 text-xs font-bold uppercase">Cancel</button>
-                   <button type="submit" className="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-xl text-white shadow-lg shadow-red-900/20 text-xs font-bold uppercase">Unlock</button>
-                 </div>
+               <h3 className="text-2xl font-bold text-center text-red-500 mb-6 uppercase tracking-[0.2em] text-glow-red font-mono">Restricted</h3>
+               <form onSubmit={handleAdminSubmit} className="space-y-4">
+                  <input 
+                    type="password" 
+                    value={adminInputCode}
+                    onChange={(e) => setAdminInputCode(e.target.value)}
+                    className="w-full bg-gray-900 border border-red-900 rounded px-4 py-3 text-center text-red-500 placeholder-red-900/50 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none tracking-[0.5em] font-mono shadow-inner"
+                    placeholder="••••••"
+                    autoFocus
+                  />
+                  <div className="flex gap-3">
+                     <button type="button" onClick={() => setShowAdminInput(false)} className="flex-1 py-3 rounded border border-gray-800 text-gray-500 hover:bg-white/5 uppercase tracking-wider text-xs font-bold font-mono">Abort</button>
+                     <button type="submit" className="flex-1 py-3 rounded bg-red-600 text-white hover:bg-red-500 font-bold uppercase tracking-wider text-xs shadow-neon-red">Unlock</button>
+                  </div>
                </form>
             </div>
+         </div>
+      )}
+      
+      {/* Name Modal */}
+      {isNaming && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className={`bg-gray-900 border ${themeColors.border} rounded-xl p-6 max-w-sm w-full shadow-2xl`}>
+            <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono">Reconfigure Identity</h3>
+            <input 
+              type="text" 
+              value={tempNameInput}
+              onChange={(e) => setTempNameInput(e.target.value)}
+              className={`w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-white mb-4 outline-none ${themeColors.ring} focus:ring-1`}
+              placeholder="Enter new designation..."
+            />
+            <div className="flex justify-end gap-3">
+               <button onClick={() => setIsNaming(false)} className="px-4 py-2 rounded text-gray-400 hover:bg-white/5 uppercase text-xs font-bold">Cancel</button>
+               <button onClick={handleNameSave} className={`px-4 py-2 rounded ${themeColors.button} uppercase text-xs font-bold`}>Save</button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+           <div className={`bg-black border ${themeColors.border} rounded-xl max-w-md w-full overflow-hidden shadow-2xl`}>
+              <div className="p-6 border-b border-white/10 bg-white/5">
+                <h3 className="text-xl font-bold text-white uppercase tracking-widest font-mono">System Config</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                 {/* Persona */}
+                 <div>
+                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Persona Protocol</label>
+                    <textarea 
+                      value={settings.customPersona}
+                      onChange={(e) => setSettings({...settings, customPersona: e.target.value})}
+                      className={`w-full bg-gray-900 border border-gray-700 rounded p-3 text-sm text-white outline-none h-24 resize-none font-mono ${themeColors.ring} focus:ring-1`}
+                      placeholder="Define AI behavior parameters..."
+                    />
+                 </div>
+                 
+                 {/* Toggles */}
+                 <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-900 rounded border border-gray-800">
+                       <span className="text-gray-300 text-sm font-bold uppercase">Incognito Mode</span>
+                       <button 
+                         onClick={() => setIsIncognito(!isIncognito)}
+                         className={`w-10 h-5 rounded-full p-0.5 transition-colors ${isIncognito ? 'bg-green-500 shadow-neon-cyan' : 'bg-gray-700'}`}
+                       >
+                         <div className={`w-4 h-4 rounded-full bg-white transition-transform shadow-sm ${isIncognito ? 'translate-x-5' : 'translate-x-0'}`} />
+                       </button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-900 rounded border border-gray-800">
+                       <span className="text-gray-300 text-sm font-bold uppercase">Auto-Read Output</span>
+                       <button 
+                         onClick={() => setSettings({...settings, autoRead: !settings.autoRead})}
+                         className={`w-10 h-5 rounded-full p-0.5 transition-colors ${settings.autoRead ? 'bg-green-500 shadow-neon-cyan' : 'bg-gray-700'}`}
+                       >
+                         <div className={`w-4 h-4 rounded-full bg-white transition-transform shadow-sm ${settings.autoRead ? 'translate-x-5' : 'translate-x-0'}`} />
+                       </button>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-4 border-t border-white/10 bg-white/5 flex justify-end">
+                 <button onClick={() => setShowSettings(false)} className={`px-6 py-2 ${themeColors.button} rounded font-bold uppercase text-xs`}>Confirm</button>
+              </div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 }

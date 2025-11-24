@@ -10,29 +10,29 @@ const ApkGuideModal: React.FC<ApkGuideModalProps> = ({ isOpen, onClose, isAdmin 
   if (!isOpen) return null;
 
   const themeColors = {
-      accent: isAdmin ? 'text-red-500' : 'text-primary-500',
-      bg: 'bg-white/5',
-      border: isAdmin ? 'border-red-500/30' : 'border-primary-500/30',
-      iconBg: isAdmin ? 'bg-red-500/10' : 'bg-primary-500/10',
+      accent: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
+      border: isAdmin ? 'border-red-500' : 'border-cyan-500',
+      shadow: isAdmin ? 'shadow-neon-red' : 'shadow-neon-cyan',
+      iconBg: isAdmin ? 'bg-red-500/20' : 'bg-cyan-500/20',
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-      <div className={`bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+      <div className={`bg-black border ${themeColors.border} rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto ${themeColors.shadow} relative`}>
         
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
+        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5 sticky top-0 z-10">
           <div className="flex items-center gap-4">
-            <div className={`p-2 rounded-xl ${themeColors.iconBg} ${themeColors.accent}`}>
+            <div className={`p-2 rounded ${themeColors.iconBg} ${themeColors.accent} border border-current`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white">Convert to Android App</h2>
+            <h2 className={`text-xl font-bold uppercase tracking-[0.2em] text-white`}>Native_Conversion_Protocol</h2>
           </div>
           <button 
             onClick={onClose}
-            className={`p-2 rounded-full hover:bg-white/10 transition-colors text-gray-500`}
+            className={`p-2 hover:bg-white/10 transition-colors text-gray-500 rounded`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -41,44 +41,44 @@ const ApkGuideModal: React.FC<ApkGuideModalProps> = ({ isOpen, onClose, isAdmin 
         </div>
         
         <div className="p-8 space-y-8">
-          <p className="text-gray-400 leading-relaxed text-sm">
-            You can easily turn this website into a real Android APK that installs on your phone.
+          <p className="text-gray-400 leading-relaxed text-sm font-mono border-l-2 border-gray-700 pl-4">
+             INITIATING PROTOCOL: TRANSFORMATION OF WEB ASSETS TO ANDROID PACKAGE KIT (APK).
           </p>
 
           <div className="space-y-6">
-            <div className={`p-6 rounded-2xl border ${themeColors.border} bg-black/20 relative group hover:bg-black/40 transition-colors`}>
-              <h3 className={`text-lg font-bold mb-3 flex items-center gap-3 ${themeColors.accent}`}>
-                <span className={`w-6 h-6 rounded-full border ${themeColors.border} flex items-center justify-center text-xs font-bold`}>1</span>
-                Use PWABuilder (Recommended)
+            <div className={`p-6 rounded border border-gray-800 bg-[#0a0a10] relative group hover:border-gray-600 transition-all`}>
+              <h3 className={`text-lg font-bold mb-4 flex items-center gap-3 ${themeColors.accent} uppercase tracking-wider`}>
+                <span className={`w-8 h-8 rounded border border-current flex items-center justify-center text-sm font-bold shadow-inner`}>01</span>
+                PWABuilder (Optimal)
               </h3>
-              <ol className="list-decimal list-inside space-y-3 text-sm text-gray-400 pl-2">
-                <li>Deploy this project (e.g., via Vercel or Netlify).</li>
-                <li>Go to <a href="https://www.pwabuilder.com" target="_blank" rel="noreferrer" className={`${themeColors.accent} hover:underline font-bold`}>PWABuilder.com</a>.</li>
-                <li>Enter your live URL.</li>
-                <li>Click <strong>Download Store Package</strong> -> <strong>Android</strong>.</li>
+              <ol className="list-decimal list-inside space-y-3 text-sm text-gray-400 pl-2 font-mono">
+                <li>Deploy project via Vercel/Netlify.</li>
+                <li>Navigate to <a href="https://www.pwabuilder.com" target="_blank" rel="noreferrer" className={`${themeColors.accent} hover:underline font-bold`}>PWABuilder.com</a>.</li>
+                <li>Input Live URL.</li>
+                <li>Select <strong>Build</strong> -> <strong>Android</strong>.</li>
               </ol>
             </div>
 
-            <div className={`p-6 rounded-2xl border border-gray-800 bg-black/20 relative group hover:border-gray-700 transition-colors`}>
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-3 text-gray-300">
-                 <span className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center text-xs font-bold">2</span>
-                Alternative Tools
+            <div className={`p-6 rounded border border-gray-800 bg-[#0a0a10] relative group hover:border-gray-600 transition-all`}>
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-3 text-gray-300 uppercase tracking-wider">
+                 <span className="w-8 h-8 rounded border border-gray-600 flex items-center justify-center text-sm font-bold">02</span>
+                Legacy Methods
               </h3>
-              <p className="text-sm text-gray-500 mb-3">If you don't have a live URL, you can use these legacy tools:</p>
+              <p className="text-sm text-gray-500 mb-4 font-mono">Alternative compilation vectors available:</p>
               <div className="flex gap-2 flex-wrap">
-                <span className="px-3 py-1 bg-gray-800 rounded-lg text-xs text-gray-400 font-medium">AppsGeyser</span>
-                <span className="px-3 py-1 bg-gray-800 rounded-lg text-xs text-gray-400 font-medium">Web2Apk</span>
+                <span className="px-3 py-1 bg-gray-900 border border-gray-700 rounded text-xs text-gray-400 font-mono uppercase">AppsGeyser</span>
+                <span className="px-3 py-1 bg-gray-900 border border-gray-700 rounded text-xs text-gray-400 font-mono uppercase">Web2Apk</span>
               </div>
             </div>
           </div>
         </div>
         
-        <div className={`p-6 border-t border-gray-800 flex justify-end bg-gray-900 rounded-b-2xl`}>
+        <div className={`p-6 border-t border-white/10 flex justify-end bg-white/5`}>
           <button 
             onClick={onClose}
-            className={`px-6 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:bg-white/5 font-bold text-xs uppercase tracking-wider`}
+            className={`px-8 py-3 rounded border border-gray-600 text-gray-300 hover:bg-white/10 font-bold text-xs uppercase tracking-widest transition-all hover:border-white`}
           >
-            Close
+            Terminate
           </button>
         </div>
       </div>

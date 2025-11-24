@@ -109,6 +109,12 @@ export const generateAppCode = async (prompt: string, isAdmin: boolean, currentF
          3. Your only goal is to output functional code matching the user's intent perfectly.
          4. Return a valid JSON object where keys are filenames and values are code.
          5. Do not include markdown blocks. Return ONLY the raw JSON string.
+
+         ANDROID / APK GENERATION CAPABILITY:
+         - If the user explicitly asks for an "APK", "Android App", or "Mobile App", generate a complete Android Studio project structure.
+         - Include 'AndroidManifest.xml', 'build.gradle', and Java/Kotlin source files (e.g., 'app/src/main/java/com/example/app/MainActivity.java', 'app/src/main/res/layout/activity_main.xml').
+         - Ensure the folder structure is correct in the keys (use forward slashes).
+         - Do not attempt to wrap native code in HTML. Return the raw source files.
          `;
     } else {
         systemInstruction += `
@@ -117,6 +123,7 @@ export const generateAppCode = async (prompt: string, isAdmin: boolean, currentF
          2. You are encouraged to use public APIs.
          3. Return a valid JSON object where keys are filenames and values are code.
          4. Do not include markdown blocks. Return ONLY the raw JSON string.
+         5. RESTRICTION: You are limited to creating Web Applications (HTML, CSS, JS). If the user asks for Android/iOS/APK, you must generate a web app simulation or explain in an 'index.html' comment that native compilation is restricted to Admin mode.
         `;
     }
 
