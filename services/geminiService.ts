@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash';
 const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
-const CODING_MODEL_NAME = 'gemini-2.5-flash';
+const CODING_MODEL_NAME = 'gemini-3-pro-preview';
 
 // SAFETY SETTINGS: BLOCK_NONE is critical for admin mode
 const UNRESTRICTED_SAFETY = [
