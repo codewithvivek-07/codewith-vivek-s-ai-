@@ -4,6 +4,7 @@ import { Message, Role, GroundingSource, ChatSession, AppSettings } from './type
 import MarkdownRenderer from './components/MarkdownRenderer';
 import ApkGuideModal from './components/ApkGuideModal';
 import AppPreviewModal from './components/AppPreviewModal';
+import PlaygroundOverlay from './components/ApnaBanaoOverlay';
 import Sidebar from './components/Sidebar';
 
 declare global {
@@ -48,6 +49,9 @@ export default function App() {
   // App Preview State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewFiles, setPreviewFiles] = useState<Record<string, string> | null>(null);
+
+  // Playground State
+  const [isPlaygroundOpen, setIsPlaygroundOpen] = useState(false);
 
   // Prompt Management
   const [visiblePrompts, setVisiblePrompts] = useState(MASTER_PROMPTS.slice(0, 6));
@@ -538,6 +542,12 @@ export default function App() {
           return;
         }
 
+        if (userText.toLowerCase() === '/playground' || userText.toLowerCase() === '/builder') {
+             setIsPlaygroundOpen(true);
+             setIsLoading(false);
+             return;
+        }
+
         const aiMsgId = (Date.now() + 1).toString();
         setMessages(prev => [...prev, {
           id: aiMsgId,
@@ -668,13 +678,24 @@ export default function App() {
           
           <div className="flex items-center gap-2">
             
+            {/* Playground Toggle */}
+            <button 
+              onClick={() => setIsPlaygroundOpen(true)}
+              className={`p-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all`}
+              title="App Builder Playground"
+            >
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+               </svg>
+            </button>
+
             {/* Admin Toggle */}
             <button 
               onClick={toggleAdmin} 
               className={`p-2 rounded transition-all duration-200 border border-transparent ${isAdmin ? 'text-neon-red shadow-neon-red border-neon-red bg-red-900/20' : 'text-gray-500 hover:text-neon-cyan hover:shadow-neon-cyan'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </button>
 
@@ -895,6 +916,10 @@ export default function App() {
                    <span className={`font-mono ${themeColors.accent}`}>/build</span>
                    <span>Build Web App / APK</span>
                  </button>
+                 <button onClick={() => {setIsPlaygroundOpen(true); setShowCommandMenu(false);}} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 text-sm text-left text-gray-200 transition-colors border-t border-gray-800">
+                   <span className={`font-mono ${themeColors.accent}`}>/builder</span>
+                   <span>Open App Playground</span>
+                 </button>
               </div>
             )}
 
@@ -1038,6 +1063,7 @@ export default function App() {
       {/* Modals */}
       <ApkGuideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isAdmin={isAdmin} />
       <AppPreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} files={previewFiles} isAdmin={isAdmin} />
+      <PlaygroundOverlay isOpen={isPlaygroundOpen} onClose={() => setIsPlaygroundOpen(false)} isAdmin={isAdmin} />
 
       {/* Admin Code Modal */}
       {showAdminInput && (
