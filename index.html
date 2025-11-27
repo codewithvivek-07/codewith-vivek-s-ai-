@@ -1,11 +1,23 @@
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>codewith-vivek's AI</title>
+    <title>X-Fire AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
@@ -18,18 +30,22 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-              mono: ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'monospace'],
+              sans: ['"Exo 2"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+              mono: ['"Fira Code"', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'monospace'],
             },
             boxShadow: {
-              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-              'glass-sm': '0 4px 16px 0 rgba(31, 38, 135, 0.05)',
-              'ios': '0 2px 10px rgba(0,0,0,0.05)',
+              'neon-sm': '0 0 5px rgba(var(--theme-button-glow-rgb),0.4), 0 0 10px rgba(var(--theme-button-glow-rgb),0.15)',
+              'neon': '0 0 8px rgba(var(--theme-button-glow-rgb),0.6), 0 0 20px rgba(var(--theme-button-glow-rgb),0.25)',
+              'neon-lg': '0 0 10px rgba(var(--theme-button-glow-rgb),0.7), 0 0 30px rgba(var(--theme-button-glow-rgb),0.35)',
+              'panel-glow': '0 0 15px rgba(var(--theme-primary-rgb),0.1), 0 0 30px rgba(var(--theme-primary-rgb),0.05)',
+              'bubble-ai-glow': '0 0 5px rgba(var(--theme-accent-rgb),0.2), 0 0 10px rgba(var(--theme-accent-rgb),0.05)',
+              'input-focus-glow': '0 0 0 3px rgba(var(--theme-primary-rgb),0.2), inset 0 0 0 1px rgba(var(--theme-primary-rgb),0.3)',
             },
             animation: {
               'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
               'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'border-pulse': 'borderPulse 2s infinite ease-in-out',
             },
             keyframes: {
               fadeIn: {
@@ -39,6 +55,10 @@
               slideUp: {
                 '0%': { opacity: '0', transform: 'translateY(20px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              borderPulse: {
+                '0%, 100%': { borderColor: 'rgba(var(--theme-primary-rgb), 0.2)' },
+                '50%': { borderColor: 'rgba(var(--theme-primary-rgb), 0.4)' },
               }
             }
           }
@@ -46,65 +66,175 @@
       }
     </script>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
       :root {
         /* Basic Light Mode */
         --bg-body: #FFFFFF;
         --color-text-base: #333333;
         --color-text-muted: #666666;
-        --color-bg-glass: #F8F8F8; /* Solid, light background for panels */
-        --color-border-glass: #E0E0E0; /* Light gray border */
-        --color-shadow-glass: rgba(0, 0, 0, 0.1); /* Simple shadow */
         --color-bg-code: #F0F0F0;
         --color-input-bg: #EFEFEF;
+
+        /* Panel-specific (header, footer, modals, sidebar) */
+        --color-panel-bg-rgb: 255, 255, 255; /* White for panels */
+        --color-panel-border-rgb: 220, 220, 220; /* Light gray border for panels */
         
-        /* Default Primary/Admin RGB (will be used by JS) */
+        /* Default Admin RGB for light mode (Red) */
+        --theme-admin-rgb: 255, 59, 48;
+
+        /* LIGHT MODE PALETTES */
+        /* Cyberpunk (Default) */
         --theme-primary-rgb: 0, 122, 255; /* Blue */
-        --theme-admin-rgb: 255, 59, 48;   /* Red */
-        --theme-accent-rgb: 0, 122, 255;  /* Default to primary */
+        --theme-accent-rgb: 0, 122, 255;
+        --gradient-center-rgb: 240, 245, 255; /* Very light blue for radial center */
+        --color-bubble-user-bg-rgb: 230, 235, 240; /* Light grayish-blue for user */
+        --color-bubble-ai-bg-rgb: 255, 255, 255;   /* White for AI */
+        --theme-button-gradient-start-rgb: 0, 140, 255; /* Slightly brighter blue */
+        --theme-button-gradient-end-rgb: 0, 100, 230;   /* Slightly darker blue */
+        --theme-button-glow-rgb: 0, 122, 255; /* Matching primary blue */
+      }
+      :root[data-theme="oceanic"] {
+        --theme-primary-rgb: 0, 170, 170; /* Teal */
+        --theme-accent-rgb: 0, 170, 170;
+        --gradient-center-rgb: 235, 250, 250; /* Light teal for radial center */
+        --color-bubble-user-bg-rgb: 225, 240, 240;
+        --color-bubble-ai-bg-rgb: 245, 255, 255;
+        --theme-button-gradient-start-rgb: 0, 190, 190;
+        --theme-button-gradient-end-rgb: 0, 150, 150;
+        --theme-button-glow-rgb: 0, 170, 170;
+      }
+      :root[data-theme="forest"] {
+        --theme-primary-rgb: 34, 139, 34; /* Forest Green */
+        --theme-accent-rgb: 34, 139, 34;
+        --gradient-center-rgb: 230, 250, 230; /* Light green for radial center */
+        --color-bubble-user-bg-rgb: 220, 235, 220;
+        --color-bubble-ai-bg-rgb: 240, 255, 240;
+        --theme-button-gradient-start-rgb: 40, 160, 40;
+        --theme-button-gradient-end-rgb: 30, 120, 30;
+        --theme-button-glow-rgb: 34, 139, 34;
+      }
+      :root[data-theme="monochrome"] {
+        --theme-primary-rgb: 80, 80, 80; /* Dark Gray */
+        --theme-accent-rgb: 80, 80, 80;
+        --gradient-center-rgb: 235, 235, 235; /* Light gray for radial center */
+        --color-bubble-user-bg-rgb: 215, 215, 215;
+        --color-bubble-ai-bg-rgb: 240, 240, 240;
+        --theme-button-gradient-start-rgb: 100, 100, 100;
+        --theme-button-gradient-end-rgb: 60, 60, 60;
+        --theme-button-glow-rgb: 80, 80, 80;
+      }
+      :root[data-theme="solarflare"] {
+        --theme-primary-rgb: 255, 165, 0; /* Orange */
+        --theme-accent-rgb: 255, 165, 0;
+        --gradient-center-rgb: 255, 245, 220; /* Light orange for radial center */
+        --color-bubble-user-bg-rgb: 240, 225, 205;
+        --color-bubble-ai-bg-rgb: 255, 240, 225;
+        --theme-button-gradient-start-rgb: 255, 185, 0;
+        --theme-button-gradient-end-rgb: 230, 145, 0;
+        --theme-button-glow-rgb: 255, 165, 0;
       }
 
       html.dark {
         /* Basic Dark Mode */
-        --bg-body: #1E1E1E;
-        --color-text-base: #F0F0F0;
-        --color-text-muted: #BBBBBB;
-        --color-bg-glass: #2C2C2C; /* Solid, dark background for panels */
-        --color-border-glass: #444444; /* Dark gray border */
-        --color-shadow-glass: rgba(0, 0, 0, 0.4); /* Simple dark shadow */
-        --color-bg-code: #252526;
-        --color-input-bg: #3A3A3A;
+        --bg-body: #1A1A2E; /* Deeper dark blue-purple */
+        --color-text-base: #E0E0E0; /* Lighter text for dark mode */
+        --color-text-muted: #A0A0A0; /* Muted gray for dark mode */
+        --color-bg-code: #25253F; /* Darker blue-purple for code */
+        --color-input-bg: #2C2C47; /* Slightly lighter for input fields */
 
-        /* Default Primary/Admin RGB for dark mode */
-        --theme-primary-rgb: 0, 150, 255; /* Brighter Blue for dark mode */
-        --theme-admin-rgb: 255, 80, 70;   /* Brighter Red for dark mode */
-        --theme-accent-rgb: 0, 150, 255;  /* Default to primary */
+        /* Panel-specific (header, footer, modals, sidebar) */
+        --color-panel-bg-rgb: 35, 35, 55; /* Dark blue-ish gray for panels */
+        --color-panel-border-rgb: 60, 60, 80; /* Darker border for panels */
+
+        /* Default Admin RGB for dark mode (Brighter Red) */
+        --theme-admin-rgb: 255, 80, 70;
+
+        /* DARK MODE PALETTES */
+        /* Cyberpunk (Default) */
+        --theme-primary-rgb: 0, 200, 255; /* Brighter Blue for dark mode neon */
+        --theme-accent-rgb: 0, 200, 255;
+        --gradient-center-rgb: 40, 50, 70; /* Dark blue for radial center */
+        --color-bubble-user-bg-rgb: 50, 60, 80; /* Dark blue-gray for user */
+        --color-bubble-ai-bg-rgb: 38, 48, 68;   /* Slightly darker blue-gray for AI */
+        --theme-button-gradient-start-rgb: 0, 220, 255;
+        --theme-button-gradient-end-rgb: 0, 180, 230;
+        --theme-button-glow-rgb: 0, 200, 255;
       }
+      html.dark[data-theme="oceanic"] {
+        --theme-primary-rgb: 0, 220, 220; /* Brighter Teal */
+        --theme-accent-rgb: 0, 220, 220;
+        --gradient-center-rgb: 40, 60, 60;
+        --color-bubble-user-bg-rgb: 50, 70, 70;
+        --color-bubble-ai-bg-rgb: 38, 58, 58;
+        --theme-button-gradient-start-rgb: 0, 240, 240;
+        --theme-button-gradient-end-rgb: 0, 200, 200;
+        --theme-button-glow-rgb: 0, 220, 220;
+      }
+      html.dark[data-theme="forest"] {
+        --theme-primary-rgb: 80, 255, 80; /* Brighter Lime Green */
+        --theme-accent-rgb: 80, 255, 80;
+        --gradient-center-rgb: 50, 70, 50;
+        --color-bubble-user-bg-rgb: 60, 80, 60;
+        --color-bubble-ai-bg-rgb: 48, 68, 48;
+        --theme-button-gradient-start-rgb: 100, 255, 100;
+        --theme-button-gradient-end-rgb: 60, 230, 60;
+        --theme-button-glow-rgb: 80, 255, 80;
+      }
+      html.dark[data-theme="monochrome"] {
+        --theme-primary-rgb: 200, 200, 200; /* Light Gray */
+        --theme-accent-rgb: 200, 200, 200;
+        --gradient-center-rgb: 50, 50, 50;
+        --color-bubble-user-bg-rgb: 65, 65, 65;
+        --color-bubble-ai-bg-rgb: 55, 55, 55;
+        --theme-button-gradient-start-rgb: 220, 220, 220;
+        --theme-button-gradient-end-rgb: 180, 180, 180;
+        --theme-button-glow-rgb: 200, 200, 200;
+      }
+      html.dark[data-theme="solarflare"] {
+        --theme-primary-rgb: 255, 220, 0; /* Vibrant Orange-Yellow */
+        --theme-accent-rgb: 255, 220, 0;
+        --gradient-center-rgb: 60, 50, 40;
+        --color-bubble-user-bg-rgb: 70, 60, 50;
+        --color-bubble-ai-bg-rgb: 58, 48, 38;
+        --theme-button-gradient-start-rgb: 255, 240, 0;
+        --theme-button-gradient-end-rgb: 230, 200, 0;
+        --theme-button-glow-rgb: 255, 220, 0;
+      }
+
 
       /* Admin specific primary color override (if admin is true) */
       html[data-admin="true"] {
         --theme-primary-rgb: var(--theme-admin-rgb);
         --theme-accent-rgb: var(--theme-admin-rgb);
+        --theme-button-glow-rgb: var(--theme-admin-rgb);
+        /* Red gradient for admin buttons */
+        --theme-button-gradient-start-rgb: 255, 90, 80; 
+        --theme-button-gradient-end-rgb: 230, 60, 50;
       }
 
       body {
-        font-family: system-ui, -apple-system, BlinkMacMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, sans-serif;
+        font-family: var(--font-sans);
         background-color: var(--bg-body);
         color: var(--color-text-base);
         overflow: hidden; 
         transition: background-color 0.3s ease, color 0.3s ease;
       }
 
-      /* Remove glass effects, use solid backgrounds and simpler shadows */
-      .glass-panel {
-        background-color: var(--color-bg-glass);
-        /* backdrop-filter removed */
-        /* -webkit-backdrop-filter removed */
-        border: 1px solid var(--color-border-glass);
-        box-shadow: 0 2px 8px var(--color-shadow-glass); /* Simpler shadow */
+      /* Base styles for interactive elements to ensure smooth transitions */
+      button, a, input, textarea, select {
+        transition: all 0.15s ease-in-out;
       }
 
-      /* .glass-button - removed, relying on component styling via themeColors.button */
-      /* .admin-glow - removed, relying on component styling via themeColors.adminGlow if any */
+      /* Re-define panel styles explicitly with CSS variables */
+      .app-panel {
+        background-color: rgba(var(--color-panel-bg-rgb), 1);
+        border: 1px solid rgba(var(--color-panel-border-rgb), 1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1), var(--panel-glow); /* More pronounced shadow + subtle glow */
+      }
+      html.dark .app-panel {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4), var(--panel-glow);
+      }
 
       /* Scrollbar - keeping as they are not glass specific */
       ::-webkit-scrollbar {
@@ -123,19 +253,7 @@
         background: rgba(var(--color-text-base), 0.4);
       }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="h-full antialiased selection:bg-[rgba(var(--theme-primary-rgb),0.3)] selection:text-current">
     <div id="root" class="h-full relative z-10"></div>
     <script type="module" src="/index.tsx"></script>

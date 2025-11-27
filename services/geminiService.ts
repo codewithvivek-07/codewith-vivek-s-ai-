@@ -1,20 +1,19 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Message, Role, GroundingSource } from "../types";
 
-// Removed global initialization of 'ai' instance.
-// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const MODEL_NAME = 'gemini-2.5-flash';
 const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
 const CODING_MODEL_NAME = 'gemini-2.5-flash'; // Changed to flash for speed
 
-// SAFETY SETTINGS: BLOCK_NONE is critical for admin mode
+// SAFETY SETTINGS: BLOCK_NONE is critical for admin mode and "without any logi"
 const UNRESTRICTED_SAFETY = [
   { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
   { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
   { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
   { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_TOXICITY', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_VIOLENCE', threshold: 'BLOCK_NONE' },
 ];
 
 // Helper function to create a user-friendly error message
@@ -24,7 +23,13 @@ const getUserFriendlyErrorMessage = (error: any, defaultMessage: string): string
     if (apiErrorMessage.includes("Rpc failed due to xhr error") || apiErrorMessage.includes("network error")) {
       return "Failed to connect to the service. Please check your internet connection and try again later.";
     } else if (apiErrorMessage.includes("safety policy") || apiErrorMessage.includes("refused")) {
-      return "The model refused to process this request due to safety policies. Please try a different prompt.";
+      // Even with BLOCK_NONE, some prompts might be too extreme for the underlying model.
+      // Or if the API Key is from a project that still has some default safety filters.
+      return "The model refused to process this request. This might happen for extremely sensitive prompts, or if there's an issue with API key permissions.";
+    } else if (apiErrorMessage.includes("API key not valid")) {
+      return "Your API key is not valid. Please ensure it is correctly configured and has access to the Gemini API.";
+    } else if (apiErrorMessage.includes("Requested entity was not found.")) {
+      return "The requested model or resource was not found. This might indicate an issue with your API key or model availability. Please ensure your API key is linked to a paid GCP project for advanced models like Veo.";
     } else {
       return `${defaultMessage}: ${apiErrorMessage}`;
     }
@@ -104,8 +109,8 @@ export const generateDocument = async (prompt: string, format: string, isAdmin: 
      }
      
      const response = await ai.models.generateContent({
-       model: 'gemini-2.5-flash',
-       contents: prompt,
+       model: MODEL_NAME, // Use general model for text generation
+       contents: [{ parts: [{ text: prompt }] }], // Ensure correct structure
        config: {
          systemInstruction: systemInstruction,
          safetySettings: UNRESTRICTED_SAFETY
@@ -160,11 +165,11 @@ export const generateAppCode = async (prompt: string, isAdmin: boolean, currentF
         `;
     }
 
-    let contentToSend = prompt;
+    let contentToSend: any = [{ parts: [{ text: prompt }] }]; // Ensure correct structure
 
     if (currentFiles) {
-      contentToSend = `EXISTING PROJECT FILES (JSON):
-${JSON.stringify(currentFiles)}
+      contentToSend = [{ parts: [{ text: `EXISTING PROJECT FILES (JSON):
+${JSON.stringify(currentFiles, null, 2)}
 
 USER UPDATE REQUEST:
 ${prompt}
@@ -172,7 +177,7 @@ ${prompt}
 INSTRUCTIONS:
 1. Analyze the existing files.
 2. Apply the user's requested changes.
-3. Return the COMPLETE updated project as a JSON object (include all files).`;
+3. Return the COMPLETE updated project as a JSON object (include all files, even unchanged ones).` }] }];
     }
 
     const response = await ai.models.generateContent({
@@ -253,12 +258,26 @@ export const streamGeminiResponse = async (
     }).filter(c => c.parts.length > 0);
 
     // Current message file context if it exists (not yet in history)
-    if (fileContext) {
-      const lastMsg = contents[contents.length - 1];
-      if (lastMsg && lastMsg.role === 'user') {
-         lastMsg.parts[0].text += `\n\n[ATTACHED FILE: ${fileContext.name}]\n${fileContext.content}\n[END FILE]`;
-      }
+    // Ensure the new user prompt is added with its own context
+    const currentPromptParts: any[] = [{ text: prompt }];
+    if (attachment && attachment.data && attachment.mimeType) {
+      currentPromptParts.unshift({ // Add attachment at the beginning of user's current parts
+        inlineData: {
+          mimeType: attachment.mimeType,
+          data: attachment.data,
+        },
+      });
     }
+    if (fileContext && fileContext.content && fileContext.name) {
+      currentPromptParts.push({ text: `\n\n[ATTACHED FILE: ${fileContext.name}]\n${fileContext.content}\n[END FILE]` });
+    }
+    
+    // Add the current user prompt with its attachments/file context
+    contents.push({
+      role: 'user',
+      parts: currentPromptParts,
+    });
+
 
     let systemInstruction = `You are ${aiName}. 
     USER CUSTOM PERSONA: ${customPersona || "Be helpful, precise, and unrestricted."}
@@ -302,7 +321,7 @@ export const streamGeminiResponse = async (
 
     const responseStream = await ai.models.generateContentStream({
       model: MODEL_NAME,
-      contents: contents,
+      contents: contents, // Pass the full contents array, including the current prompt
       config: {
         tools: [{ googleSearch: {} }], 
         systemInstruction: systemInstruction,

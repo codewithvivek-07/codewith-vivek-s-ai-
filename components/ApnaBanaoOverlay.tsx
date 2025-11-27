@@ -44,7 +44,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
     
     if (!html) {
         // Use CSS variables directly for styling error message
-        return `<html><body style="background:var(--bg-body);color:rgb(var(--theme-primary-rgb));display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;text-transform:uppercase;"><h2>ERROR: ENTRY_POINT_MISSING</h2></body></html>`;
+        return `<html><body style="background:var(--bg-body);color:rgb(var(--theme-primary-rgb));display:flex;align-items:center;justify-content:center;height:100vh;font-family:var(--font-sans);text-transform:uppercase;"><h2>ERROR: ENTRY_POINT_MISSING</h2></body></html>`;
     }
 
     const injectResource = (tagType: 'style' | 'script', filename: string, content: string) => {
@@ -311,32 +311,32 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
   const iframeStyles = {
     width: deviceView === 'desktop' ? '100%' : deviceView === 'tablet' ? '768px' : '375px',
     height: deviceView === 'desktop' ? '100%' : deviceView === 'tablet' ? '1024px' : '667px',
-    border: deviceView === 'desktop' ? 'none' : `4px solid rgba(var(--theme-primary-rgb))`,
+    border: deviceView === 'desktop' ? 'none' : `4px solid rgb(${isAdmin ? 'var(--theme-admin-rgb)' : 'var(--theme-primary-rgb)'})`,
     borderRadius: deviceView === 'desktop' ? '0' : '20px',
     transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     backgroundColor: 'white',
     margin: '0 auto',
-    boxShadow: deviceView === 'desktop' ? 'none' : `0 25px 50px -12px rgba(var(--theme-primary-rgb), 0.5)`
+    boxShadow: deviceView === 'desktop' ? 'none' : `0 25px 50px -12px rgba(${isAdmin ? 'var(--theme-admin-rgb)' : 'var(--theme-primary-rgb)'}, 0.5)`
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--bg-body)] animate-fade-in rounded-3xl">
        {/* Header */}
-       <div className={`p-4 border-b border-[var(--color-border-glass)] flex justify-between items-center glass-panel ${themeColors.adminGlow}`}>
+       <div className={`p-4 border-b border-[rgba(var(--color-panel-border-rgb),1)] flex justify-between items-center app-panel shadow-panel-glow ${themeColors.adminGlow}`}>
          <h2 className={`font-bold text-xl ${themeColors.accent}`}>Playground {isAdmin && '(ADMIN)'}</h2>
          <div className="flex items-center gap-3">
             {isWebApp && files && (
               <>
                 <button 
                   onClick={handleOpenNewTab} 
-                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] text-[var(--color-text-muted)] hover:border-[var(--color-text-base)] hover:text-[var(--color-text-base)] font-bold text-sm uppercase tracking-wider transition-colors items-center gap-2 rounded-xl shadow-ios flex`}
+                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[rgba(var(--color-panel-border-rgb),0.5)] text-[var(--color-text-muted)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:text-[var(--color-text-base)] hover:shadow-neon-sm font-bold text-sm uppercase tracking-wider transition-all duration-150 ease-in-out items-center gap-2 rounded-xl flex`}
                   title="Open in New Tab"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                 </button>
                 <button 
                   onClick={handleToggleFullscreen} 
-                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] text-[var(--color-text-muted)] hover:border-[var(--color-text-base)] hover:text-[var(--color-text-base)] font-bold text-sm uppercase tracking-wider transition-colors items-center gap-2 rounded-xl shadow-ios flex`}
+                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[rgba(var(--color-panel-border-rgb),0.5)] text-[var(--color-text-muted)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:text-[var(--color-text-base)] hover:shadow-neon-sm font-bold text-sm uppercase tracking-wider transition-all duration-150 ease-in-out items-center gap-2 rounded-xl flex`}
                   title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                 >
                   {isFullscreen ? (
@@ -349,11 +349,11 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
             )}
 
             {files && (
-              <button onClick={handleDownloadZip} className={`px-4 py-2 ${themeColors.button} rounded-xl font-bold text-sm shadow-ios`}>
+              <button onClick={handleDownloadZip} className={`px-4 py-2 rounded-xl font-bold text-sm transition-all duration-150 ease-in-out ${themeColors.button}`}>
                 Download Project (ZIP)
               </button>
             )}
-            <button onClick={onClose} className="p-2 bg-[var(--color-input-bg)] rounded-full text-[var(--color-text-muted)] hover:opacity-80 transition-opacity">
+            <button onClick={onClose} className="p-2 bg-[var(--color-input-bg)] rounded-full text-[var(--color-text-muted)] hover:opacity-80 transition-opacity border border-transparent hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
             </button>
          </div>
@@ -362,11 +362,11 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
        {/* Main Content Area */}
        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Left Pane: Controls & File Explorer */}
-          <div className="w-full md:w-1/4 min-w-[250px] p-4 border-b md:border-b-0 md:border-r border-[var(--color-border-glass)] flex flex-col gap-4 glass-panel">
+          <div className="w-full md:w-1/4 min-w-[250px] p-4 border-b md:border-b-0 md:border-r border-[rgba(var(--color-panel-border-rgb),1)] flex flex-col gap-4 app-panel">
              {(!files || Object.keys(files).length === 0) ? (
                 <>
                   <textarea 
-                    className="w-full flex-1 bg-[var(--color-input-bg)] rounded-xl p-3 resize-none outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb))] placeholder-[var(--color-text-muted)] text-sm" 
+                    className="w-full flex-1 bg-[var(--color-input-bg)] rounded-xl p-3 resize-none outline-none focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)] text-sm text-[var(--color-text-base)]" 
                     placeholder={isAdmin ? "Kya banau boss? Jaise 'ek to-do list app, ekdum faadu style mein'" : "Describe the app you want to build..."} 
                     value={initialPrompt} 
                     onChange={e => setInitialPrompt(e.target.value)}
@@ -375,7 +375,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
                   <button 
                     onClick={handleInitialGenerate} 
                     disabled={!initialPrompt.trim() || playgroundLoading} 
-                    className={`py-3 rounded-xl font-bold text-sm shadow-ios transition-opacity ${(!initialPrompt.trim() || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
+                    className={`py-3 rounded-xl font-bold text-sm transition-all duration-150 ease-in-out ${(!initialPrompt.trim() || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
                   >
                     {playgroundLoading ? (isAdmin ? 'Ban raha hai...' : 'Building App...') : (isAdmin ? 'Bana de!' : 'Generate App')}
                   </button>
@@ -388,20 +388,20 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
                       <button 
                         key={filename} 
                         onClick={() => handleFileSelect(filename)} 
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-mono transition-colors border flex justify-between items-center
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-mono transition-colors border duration-150 ease-in-out flex justify-between items-center
                           ${activeFilename === filename 
-                            ? `bg-[rgb(var(--theme-primary-rgb),0.1)] border-[rgb(var(--theme-primary-rgb),0.2)] ${themeColors.accent}` 
-                            : `border-transparent hover:bg-[var(--color-input-bg)] text-[var(--color-text-base)]`
+                            ? `bg-[rgba(var(--theme-primary-rgb),0.1)] border-[rgba(var(--theme-primary-rgb),0.3)] shadow-neon-sm ${themeColors.accent}` 
+                            : `border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--color-panel-border-rgb),0.3)] text-[var(--color-text-base)]`
                           }`}
                       >
                         <span className="truncate">{filename}</span>
-                        <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(filename); }} className="ml-2 p-1 text-[var(--color-text-muted)] hover:text-[rgb(var(--theme-primary-rgb))] rounded-full opacity-70 hover:opacity-100 transition-opacity">
+                        <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(filename); }} className="ml-2 p-1 text-[var(--color-text-muted)] hover:text-[rgb(var(--theme-primary-rgb))] rounded-full opacity-70 hover:opacity-100 transition-opacity duration-150 ease-in-out">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         </button>
                       </button>
                     ))}
                   </div>
-                  <button onClick={resetPlayground} className={`mt-4 w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 transition-colors`}>
+                  <button onClick={resetPlayground} className={`mt-4 w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 transition-colors duration-150 ease-in-out`}>
                     Start New Project
                   </button>
                 </div>
@@ -409,17 +409,17 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
           </div>
 
           {/* Middle Pane: Code Editor & Preview */}
-          <div className="flex-1 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-[var(--color-border-glass)]">
+          <div className="flex-1 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-[rgba(var(--color-panel-border-rgb),1)]">
             {files && (
               <>
                 {/* Code Editor */}
-                <div className="h-1/2 flex flex-col border-b border-[var(--color-border-glass)]">
-                  <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-input-bg)] border-b border-[var(--color-border-glass)]">
+                <div className="h-1/2 flex flex-col border-b border-[rgba(var(--color-panel-border-rgb),1)]">
+                  <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)]">
                     <span className="text-sm font-bold opacity-60 font-mono text-[var(--color-text-muted)]">{activeFilename || 'No file selected'}</span>
                   </div>
                   <textarea 
                     ref={codeEditorRef}
-                    className="flex-1 bg-[var(--color-bg-code)] font-mono text-sm p-4 resize-none outline-none overflow-auto"
+                    className="flex-1 bg-[var(--color-bg-code)] font-mono text-sm p-4 resize-none outline-none overflow-auto text-[var(--color-text-base)]"
                     value={editedFileContent} 
                     onChange={handleCodeChange}
                     disabled={!activeFilename || playgroundLoading}
@@ -429,20 +429,20 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
 
                 {/* Preview */}
                 <div className="h-1/2 flex flex-col relative bg-[var(--bg-body)]">
-                   <div className="flex justify-between items-center px-4 py-2 border-b border-[var(--color-border-glass)] bg-[var(--color-input-bg)]">
+                   <div className="flex justify-between items-center px-4 py-2 border-b border-[rgba(var(--color-panel-border-rgb),0.5)] bg-[var(--color-input-bg)]">
                      <span className="text-sm font-bold opacity-60 font-mono text-[var(--color-text-muted)]">Live Preview {isNativeApp && '(No Live Preview for native apps)'}</span>
                      {!isNativeApp && (
-                       <div className="flex bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] p-1 gap-1 rounded-lg">
+                       <div className="flex bg-[var(--color-input-bg)] border border-[rgba(var(--color-panel-border-rgb),0.5)] p-1 gap-1 rounded-lg">
                          {(['desktop', 'tablet', 'mobile'] as const).map(d => (
                            <button 
                              key={d}
                              onClick={() => setDeviceView(d)}
-                             className={`p-2 transition-all rounded-md ${deviceView === d ? themeColors.toggleActive + ' text-white' : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-glass)]'}`}
+                             className={`p-2 transition-all duration-150 ease-in-out rounded-md ${deviceView === d ? themeColors.toggleActive + ' text-white shadow-neon-sm' : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-glass)]'}`}
                              title={d}
                            >
-                            {d === 'desktop' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-                            {d === 'tablet' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-                            {d === 'mobile' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
+                            {d === 'desktop' && <i className="fas fa-desktop w-4 h-4"></i>}
+                            {d === 'tablet' && <i className="fas fa-tablet-alt w-4 h-4"></i>}
+                            {d === 'mobile' && <i className="fas fa-mobile-alt w-4 h-4"></i>}
                            </button>
                          ))}
                        </div>
@@ -477,12 +477,12 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
           </div>
 
           {/* Right Pane: Playground AI Chat */}
-          <div className="w-full md:w-1/4 min-h-[250px] p-4 flex flex-col glass-panel"> {/* Added min-h-[250px] for better mobile/stacked layout */}
+          <div className="w-full md:w-1/4 min-h-[250px] p-4 flex flex-col app-panel"> {/* Added min-h-[250px] for better mobile/stacked layout */}
             <h3 className="text-sm font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Playground AI Chat</h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {playgroundMessages.map((msg) => (
                 <div key={msg.id} className={`flex flex-col max-w-full ${msg.role === Role.USER ? 'items-end' : 'items-start'}`}>
-                  <div className={`relative px-4 py-3 text-[14px] leading-relaxed shadow-sm max-w-[90%]
+                  <div className={`relative px-4 py-3 text-[14px] leading-relaxed max-w-[90%]
                     ${msg.role === Role.USER 
                       ? themeColors.userBubble 
                       : themeColors.aiBubble
@@ -506,7 +506,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
             
             <div className="mt-4 relative flex-shrink-0"> {/* Added flex-shrink-0 here */}
               <textarea 
-                className="w-full bg-[var(--color-input-bg)] rounded-xl p-3 pr-10 resize-none outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb))] placeholder-[var(--color-text-muted)] text-sm" 
+                className="w-full bg-[var(--color-input-bg)] rounded-xl p-3 pr-10 resize-none outline-none focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)] text-sm text-[var(--color-text-base)]" 
                 placeholder={isAdmin ? "Kya command hai boss? Code change karu ya kuch samjhau?" : "Ask about the code or request changes..."}
                 value={playgroundInput} 
                 onChange={e => setPlaygroundInput(e.target.value)}
@@ -517,10 +517,10 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
               <button 
                 onClick={handlePlaygroundSend} 
                 disabled={!playgroundInput.trim() || !files || playgroundLoading} 
-                className={`absolute bottom-3 right-3 p-2 rounded-full transition-all shadow-lg 
+                className={`absolute bottom-3 right-3 p-2 rounded-full transition-all duration-150 ease-in-out 
                   ${(!playgroundInput.trim() || !files || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
               >
-                {playgroundLoading ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>}
+                {playgroundLoading ? <div className={`h-4 w-4 border-2 border-[rgba(var(--theme-primary-rgb),0.3)] border-t-[rgb(var(--theme-primary-rgb))] rounded-full animate-spin`} /> : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>}
               </button>
             </div>
           </div>
