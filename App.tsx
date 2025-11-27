@@ -454,7 +454,7 @@ export default function App() {
         <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(circle at center, rgba(var(--gradient-center-rgb), 0.1) 0%, transparent 70%)' }}></div>
         
         {/* Header - iOS Glass */}
-        <header className={`flex-none h-16 px-6 flex items-center justify-between z-20 app-panel border-b-[rgba(var(--color-panel-border-rgb),1)] m-4 rounded-2xl shadow-panel-glow ${themeColors.adminGlow}`}>
+        <header className={`flex-none h-16 px-4 sm:px-6 flex items-center justify-between z-20 app-panel border-b-[rgba(var(--color-panel-border-rgb),1)] shadow-panel-glow ${themeColors.adminGlow}`}>
           <div className="flex items-center gap-4">
              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`}>
                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -512,7 +512,7 @@ export default function App() {
                    </div>
                 )}
                 
-                <div className={`relative px-5 py-4 text-[15px] leading-relaxed 
+                <div className={`relative px-5 py-4 text-[15px] leading-relaxed max-w-[85%] 
                   ${msg.role === Role.USER 
                     ? `${themeColors.userBubble}` 
                     : `${themeColors.aiBubble}`

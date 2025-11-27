@@ -21,7 +21,9 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
   const [playgroundMessages, setPlaygroundMessages] = useState<Message[]>([]);
   const [playgroundInput, setPlaygroundInput] = useState('');
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
-  const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [deviceView, setDeviceView] = ['desktop', 'tablet', 'mobile'].includes(localStorage.getItem('playgroundDeviceView') || 'desktop') 
+                                        ? useState<'desktop' | 'tablet' | 'mobile'>(localStorage.getItem('playgroundDeviceView') as 'desktop' | 'tablet' | 'mobile')
+                                        : useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isFullscreen, setIsFullscreen] = useState(false); // New state for fullscreen
 
   const playgroundChatEndRef = useRef<HTMLDivElement>(null);
@@ -125,6 +127,12 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+  
+  // Store device view preference
+  useEffect(() => {
+    localStorage.setItem('playgroundDeviceView', deviceView);
+  }, [deviceView]);
+
 
   if (!isOpen) return null;
 
