@@ -10,6 +10,8 @@ interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
   isAdmin: boolean;
+  themeColors: any;
+  onResetApp: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -20,7 +22,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDeleteSession,
   isOpen,
   toggleSidebar,
-  isAdmin
+  isAdmin,
+  themeColors,
+  onResetApp
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -29,107 +33,72 @@ const Sidebar: React.FC<SidebarProps> = ({
     s.messages.some(m => m.text.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const themeColors = {
-     text: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
-     activeItem: isAdmin 
-        ? 'bg-red-900/20 text-white border-red-500 shadow-neon-red' 
-        : 'bg-cyan-900/20 text-white border-cyan-500 shadow-neon-cyan',
-     hoverItem: 'hover:bg-white/5 hover:text-white',
-     button: isAdmin 
-        ? 'bg-red-600 hover:bg-red-500 text-white shadow-neon-red' 
-        : 'bg-primary-600 hover:bg-primary-500 text-white shadow-neon-cyan',
-     border: isAdmin ? 'border-red-500/30' : 'border-cyan-500/30'
-  };
-
   return (
     <>
-      {/* Mobile Overlay */}
       <div 
-        className={`fixed inset-0 bg-black/80 z-30 md:hidden backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black/30 z-30 md:hidden backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={toggleSidebar}
       />
 
-      {/* Sidebar Container */}
       <aside 
-        className={`fixed md:relative z-40 h-full transform transition-all duration-300 ease-in-out flex flex-col bg-[#0a0a1a] border-r border-white/10
+        className={`fixed md:relative z-40 h-full transform transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col glass-panel border-r border-[var(--color-border-glass)] rounded-2xl md:rounded-r-none
           ${isOpen ? 'translate-x-0 w-80' : '-translate-x-full md:translate-x-0 w-80 md:w-0 overflow-hidden'}`}
       >
-        <div className="p-4 space-y-4 min-w-[20rem]">
-          <div className="flex justify-between items-center md:hidden">
-            <span className={`font-bold text-lg text-white font-mono uppercase`}>Logs</span>
-            <button onClick={toggleSidebar} className="p-2 hover:bg-white/10 rounded text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between items-center md:hidden mb-2">
+            <span className="font-bold text-xl tracking-tight">Chats</span>
+            <button onClick={toggleSidebar} className="p-2 bg-[var(--color-input-bg)] rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <button
-            onClick={onNewChat}
-            className={`w-full py-3 px-4 rounded font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all btn-3d ${themeColors.button}`}
-          >
-            <span className="text-lg leading-none">+</span>
-            Init_Sequence
+          <button onClick={onNewChat} className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm shadow-ios transition-all flex items-center justify-center gap-2 ${themeColors.button}`}>
+            <span className="text-xl leading-none font-light">+</span> New Chat
           </button>
           
           <div className="relative">
-             <input 
-               type="text" 
-               placeholder="SEARCH_LOGS..." 
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-               className={`w-full pl-9 pr-4 py-2 bg-black border border-gray-800 rounded focus:ring-1 focus:border-transparent transition-all text-xs outline-none text-gray-300 placeholder-gray-700 font-mono ${isAdmin ? 'focus:ring-neon-red' : 'focus:ring-neon-cyan'}`}
-             />
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 absolute left-3 top-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-             </svg>
+             <input type="text" placeholder="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+               className={`w-full pl-10 pr-4 py-2.5 bg-[var(--color-input-bg)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb))] transition-all placeholder-[var(--color-text-muted)]`} />
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-3 opacity-50 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1 min-w-[20rem] scrollbar-thin">
-          <div className="px-2 pb-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">Recent Activity</div>
-          
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
           {filteredSessions.length === 0 && (
-            <div className="text-center py-10 opacity-30">
-              <p className="text-xs text-gray-500 font-mono">NO_DATA_FOUND</p>
-            </div>
+            <div className="text-center py-12 opacity-40 text-sm text-[var(--color-text-muted)]">No conversations found</div>
           )}
           
           {filteredSessions.map((session) => (
             <div
               key={session.id}
               onClick={() => onSelectSession(session.id)}
-              className={`group relative flex items-center justify-between p-3 rounded cursor-pointer transition-all duration-200 border-l-2 ${
+              className={`group relative flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all duration-200 border ${
                 currentSessionId === session.id 
-                  ? themeColors.activeItem 
-                  : `border-transparent text-gray-500 ${themeColors.hoverItem}`
+                  ? `bg-[rgb(var(--theme-primary-rgb),0.1)] border-[rgb(var(--theme-primary-rgb),0.2)]` 
+                  : `border-transparent hover:bg-[var(--color-input-bg)]`
               }`}
             >
               <div className="flex flex-col truncate pr-6 w-full">
-                <span className={`truncate text-xs font-bold font-mono tracking-wide ${currentSessionId === session.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                <span className={`truncate text-sm font-medium ${currentSessionId === session.id ? themeColors.accent : ''}`}>
                   {session.title}
                 </span>
-                <span className="text-[9px] opacity-50 mt-0.5 font-mono">
-                  {new Date(session.timestamp).toLocaleDateString()}
-                </span>
+                <span className="text-[10px] opacity-40 mt-0.5 text-[var(--color-text-muted)]">{new Date(session.timestamp).toLocaleDateString()}</span>
               </div>
               
               <button
                 onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-red-900/50 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 text-gray-600`}
-                title="Purge"
+                className="absolute right-2 p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
           ))}
         </div>
         
-        {/* Sidebar Footer Decor */}
-        <div className="p-4 border-t border-white/5 bg-black/50 text-[10px] text-gray-600 font-mono text-center uppercase">
-           V3.0.1 // STABLE
+        <div className="p-4 border-t border-[var(--color-border-glass)]">
+           <button onClick={onResetApp} className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 transition-colors`}>
+             Reset App
+           </button>
         </div>
       </aside>
     </>

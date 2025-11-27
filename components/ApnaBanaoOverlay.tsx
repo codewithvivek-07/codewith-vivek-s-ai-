@@ -1,172 +1,251 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { generateAppCode } from '../services/geminiService';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { generateAppCode, streamGeminiResponse } from '../services/geminiService';
+import { Message, Role } from '../types';
+import MarkdownRenderer from './MarkdownRenderer';
+// import CodeBlock from './CodeBlock'; // Using textarea for live editing
 
-// Declare JSZip for TypeScript since it's loaded via CDN
-declare global {
-  interface Window {
-    JSZip: any;
-  }
+interface PlaygroundProps { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  isAdmin: boolean; 
+  themeColors: any; // Passed from App.tsx
+  aiName: string; // Base AI Name from App.tsx
 }
 
-interface PlaygroundOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isAdmin: boolean;
-}
+const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin, themeColors, aiName: baseAiName }) => {
+  const [initialPrompt, setInitialPrompt] = useState('');
+  const [files, setFiles] = useState<Record<string, string> | null>(null);
+  const [activeFilename, setActiveFilename] = useState<string | null>(null);
+  const [editedFileContent, setEditedFileContent] = useState<string>('');
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [playgroundMessages, setPlaygroundMessages] = useState<Message[]>([]);
+  const [playgroundInput, setPlaygroundInput] = useState('');
+  const [playgroundLoading, setPlaygroundLoading] = useState(false);
+  const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [isFullscreen, setIsFullscreen] = useState(false); // New state for fullscreen
 
-const PlaygroundOverlay: React.FC<PlaygroundOverlayProps> = ({ isOpen, onClose, isAdmin }) => {
-  const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedFiles, setGeneratedFiles] = useState<Record<string, string> | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Preview Controls
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  
-  // Layout Controls
-  const [layoutMode, setLayoutMode] = useState<'side' | 'bottom'>('side');
-  const [showLayoutDropdown, setShowLayoutDropdown] = useState(false);
-  // Fix: Changed 'HTMLDivLement' to 'HTMLDivElement'
-  const layoutDropdownRef = useRef<HTMLDivElement>(null);
+  const playgroundChatEndRef = useRef<HTMLDivElement>(null);
+  const codeEditorRef = useRef<HTMLTextAreaElement>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null); // New ref for the iframe
 
-  if (!isOpen) return null;
+  const playgroundAiName = isAdmin ? "Dilli Dev Bot" : "Playground AI";
 
-  // Theme Definitions
-  const themeColors = {
-      border: isAdmin ? 'border-neon-red' : 'border-neon-cyan',
-      shadow: isAdmin ? 'shadow-neon-red' : 'shadow-neon-cyan',
-      text: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
-      button: isAdmin 
-         ? 'bg-admin-600 hover:bg-admin-500 text-white shadow-neon-red btn-3d' 
-         : 'bg-primary-600 hover:bg-primary-500 text-white shadow-neon-cyan btn-3d',
-      ring: isAdmin ? 'focus:ring-neon-red' : 'focus:ring-neon-cyan',
-      activeDevice: isAdmin ? 'bg-red-900/50 text-white shadow-neon-red' : 'bg-cyan-900/50 text-white shadow-neon-cyan',
-      bgPanel: 'glass-panel',
-      accent: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
-      loadingBorder: isAdmin ? 'border-red-900 border-t-red-500' : 'border-cyan-900 border-t-cyan-500',
-      loadingText: isAdmin ? 'text-neon-red' : 'text-neon-cyan',
-      inputBorder: isAdmin ? 'border-red-700' : 'border-cyan-700',
-  };
-
-  // Handle click outside for dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (layoutDropdownRef.current && !layoutDropdownRef.current.contains(event.target as Node)) {
-        setShowLayoutDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    
-    setIsGenerating(true);
-    setError(null);
-    
-    try {
-      // Pass existing files if available for update
-      const files = await generateAppCode(prompt, isAdmin, generatedFiles || undefined);
-      setGeneratedFiles(files);
-      createPreview(files);
-      setPrompt(''); // Clear prompt for next instruction
-    } catch (err: any) {
-      setError(err.message || "Failed to generate app. Please try again.");
-    } finally {
-      setIsGenerating(false);
+  // --- Utility to create preview HTML ---
+  const generatePreviewContent = useCallback((currentFiles: Record<string, string>, currentActiveFilename: string | null, currentEditedFileContent: string): string => {
+    let tempFiles = { ...currentFiles };
+    if (currentActiveFilename && currentEditedFileContent !== null) { // Check for null explicitly
+      tempFiles[currentActiveFilename] = currentEditedFileContent;
     }
-  };
 
-  const createPreview = (files: Record<string, string>) => {
-    // Robustly find index.html (case insensitive)
-    const indexKey = Object.keys(files).find(k => k.toLowerCase() === 'index.html' || k.toLowerCase() === 'index.htm' || k.toLowerCase() === 'main.html') 
-                  || Object.keys(files).find(k => k.endsWith('.html'));
+    const indexKey = Object.keys(tempFiles).find(k => k.toLowerCase() === 'index.html' || k.toLowerCase() === 'index.htm' || k.toLowerCase() === 'main.html')
+                     || Object.keys(tempFiles).find(k => k.endsWith('.html'));
     
-    let html = indexKey ? files[indexKey] : '';
+    let html = indexKey ? tempFiles[indexKey] : '';
     
     if (!html) {
-        // Fallback HTML if missing
-        html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { 
-              font-family: 'Rajdhani', sans-serif; 
-              padding: 2rem; 
-              color: ${isAdmin ? '#ff003c' : '#00f3ff'}; 
-              background: #050510;
-              text-align: center; 
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-              margin: 0;
-              text-transform: uppercase;
-              letter-spacing: 2px;
-            }
-            .card {
-              border: 1px solid ${isAdmin ? '#ff003c' : '#00f3ff'};
-              padding: 2rem;
-              background: rgba(0,0,0,0.5);
-              max-width: 400px;
-              box-shadow: 0 0 10px ${isAdmin ? '#ff003c' : '#00f3ff'};
-            }
-            h2 { margin-top: 0; text-shadow: 0 0 10px currentColor; }
-          </style>
-        </head>
-        <body>
-            <div class="card">
-              <h2>Index Missing</h2>
-              <p>The AI generated code but no <strong>index.html</strong> entry point was found.</p>
-            </div>
-        </body>
-        </html>`;
+        // Use CSS variables directly for styling error message
+        return `<html><body style="background:var(--bg-body);color:rgb(var(--theme-primary-rgb));display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;text-transform:uppercase;"><h2>ERROR: ENTRY_POINT_MISSING</h2></body></html>`;
     }
 
-    // Helper to inject content
     const injectResource = (tagType: 'style' | 'script', filename: string, content: string) => {
-       const escapedName = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-       if (tagType === 'style') {
-           const linkRegex = new RegExp(`<link[^>]+href=["'](\\./)?${escapedName}["'][^>]*>`, 'i');
-           if (linkRegex.test(html)) {
-               html = html.replace(linkRegex, `<style>${content}</style>`);
-           } else {
-               if (html.includes('</head>')) html = html.replace('</head>', `<style>${content}</style></head>`);
-               else html += `<style>${content}</style>`;
-           }
-       } else {
-           const scriptRegex = new RegExp(`<script[^>]+src=["'](\\./)?${escapedName}["'][^>]*>\\s*<\\/script>`, 'i');
-           if (scriptRegex.test(html)) {
-               html = html.replace(scriptRegex, `<script>${content}</script>`);
-           } else {
-               if (html.includes('</body>')) html = html.replace('</body>', `<script>${content}</script></body>`);
-               else html += `<script>${content}</script>`;
-           }
-       }
+      const escapedName = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (tagType === 'style') {
+          const linkRegex = new RegExp(`<link[^>]+href=["'](\\./)?${escapedName}["'][^>]*>`, 'i');
+          if (linkRegex.test(html)) {
+              html = html.replace(linkRegex, `<style>${content}</style>`);
+          } else {
+              if (html.includes('</head>')) html = html.replace('</head>', `<style>${content}</style></head>`);
+              else html += `<style>${content}</style>`;
+          }
+      } else {
+          const scriptRegex = new RegExp(`<script[^>]+src=["'](\\./)?${escapedName}["'][^>]*>\\s*<\\/script>`, 'i');
+          if (scriptRegex.test(html)) {
+              html = html.replace(scriptRegex, `<script>${content}</script>`);
+          } else {
+              if (html.includes('</body>')) html = html.replace('</body>', `<script>${content}</script></body>`);
+              else html += `<script>${content}</script>`;
+          }
+      }
     };
 
-    Object.entries(files).forEach(([filename, content]) => {
-        if (filename === indexKey) return; // Skip main html
+    Object.entries(tempFiles).forEach(([filename, content]) => {
+        if (filename === indexKey) return;
         if (filename.endsWith('.css')) injectResource('style', filename, content);
         if (filename.endsWith('.js')) injectResource('script', filename, content);
     });
 
-    setPreviewUrl(html);
+    return html;
+  }, []); // No need for isAdmin in useCallback deps, as CSS vars handle it
+
+  // --- Effects ---
+  useEffect(() => {
+    if (!isOpen) {
+      // Cleanup on close
+      setInitialPrompt('');
+      setFiles(null);
+      setActiveFilename(null);
+      setEditedFileContent('');
+      setPreviewHtml(null);
+      setPlaygroundMessages([]);
+      setPlaygroundInput('');
+      setPlaygroundLoading(false);
+      setDeviceView('desktop');
+      setIsFullscreen(false); // Reset fullscreen state
+      return;
+    };
+
+    // Initial playground message
+    if (playgroundMessages.length === 0) {
+      setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "Kya scene hai boss! Admin mode mein Playground hazir hai. Bol, kya banau ya kya fix karu? No fikar, no sharam, seedha kaam pe lag jaate hain." : "Welcome to the Playground! Describe an app you want to build, or ask me to modify existing code.", timestamp: Date.now() }]);
+    }
+  }, [isOpen, isAdmin, playgroundMessages.length]); // Re-run if isOpen changes or if messages length is 0 and it becomes 0
+
+  useEffect(() => {
+    if (files && activeFilename !== null && editedFileContent !== null) {
+      setPreviewHtml(generatePreviewContent(files, activeFilename, editedFileContent));
+    } else if (files && Object.keys(files).length > 0) {
+      // If files exist but no active file selected, select the first one
+      const firstFile = Object.keys(files)[0];
+      setActiveFilename(firstFile);
+      setEditedFileContent(files[firstFile]);
+    }
+  }, [files, activeFilename, editedFileContent, generatePreviewContent]);
+
+  useEffect(() => {
+    playgroundChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [playgroundMessages]);
+
+  // Effect for fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  if (!isOpen) return null;
+
+  // --- Handlers ---
+  const handleInitialGenerate = async () => {
+    if (!initialPrompt.trim()) return;
+    setPlaygroundLoading(true);
+    try {
+      setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.USER, text: initialPrompt, timestamp: Date.now() }]);
+      const aiResponseId = (Date.now() + 1).toString();
+      setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Theek hai boss, tera app banake deta hoon. Zara sabar kar." : "Okay, building your app...", isStreaming: true, timestamp: Date.now() }]);
+
+      const generatedFiles = await generateAppCode(initialPrompt, isAdmin);
+      setFiles(generatedFiles);
+      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Le boss, tera app ready hai. Dekh, aur bata kya change karna hai." : "App built successfully!", isStreaming: false } : m));
+      
+      const firstHtmlFile = Object.keys(generatedFiles).find(k => k.endsWith('.html'));
+      if (firstHtmlFile) {
+        setActiveFilename(firstHtmlFile);
+        setEditedFileContent(generatedFiles[firstHtmlFile]);
+      } else if (Object.keys(generatedFiles).length > 0) {
+        const firstFile = Object.keys(generatedFiles)[0];
+        setActiveFilename(firstFile);
+        setEditedFileContent(generatedFiles[firstFile]);
+      }
+      setInitialPrompt(''); // Clear initial prompt after generation
+    } catch (e: any) {
+      console.error("Playground initial generate error:", e);
+      setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.MODEL, text: isAdmin ? `Firse locha ho gaya boss! ${e.message || 'Kuch gadbad ho gayi.'}` : `Error building app: ${e.message}`, timestamp: Date.now() }]);
+    } finally {
+      setPlaygroundLoading(false);
+    }
+  };
+
+  const handleFileSelect = (filename: string) => {
+    // Save current edits if any before switching file
+    if (activeFilename && files && editedFileContent !== null) {
+      setFiles(prev => ({ ...prev!, [activeFilename]: editedFileContent }));
+    }
+    setActiveFilename(filename);
+    setEditedFileContent(files![filename]);
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setEditedFileContent(newContent);
+    // Auto-update preview with local edits as user types
+    if (files && activeFilename) {
+      setPreviewHtml(generatePreviewContent(files, activeFilename, newContent));
+    }
+  };
+
+  const handlePlaygroundSend = async () => {
+    if (!playgroundInput.trim() || playgroundLoading || !files) return;
+
+    const userMsgText = playgroundInput.trim();
+    setPlaygroundInput('');
+    setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.USER, text: userMsgText, timestamp: Date.now() }]);
+    setPlaygroundLoading(true);
+
+    // Apply any current local edits to the 'files' state before sending to AI
+    const currentFilesWithEdits = { ...files };
+    if (activeFilename && editedFileContent !== null) {
+      currentFilesWithEdits[activeFilename] = editedFileContent;
+    }
+
+    const aiResponseId = (Date.now() + 1).toString();
+    setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Theek hai, check karta hoon..." : "Processing your request...", isStreaming: true, timestamp: Date.now() }]);
+
+    // Heuristics to decide between code modification and chat
+    const codeModificationKeywords = ['add', 'create', 'make', 'change', 'update', 'modify', 'refactor', 'fix', 'implement', 'build', 'remove', 'delete'];
+    const isCodeModificationRequest = codeModificationKeywords.some(keyword => userMsgText.toLowerCase().includes(keyword));
+
+    try {
+      if (isCodeModificationRequest) {
+        // User wants to modify the code
+        const updatedFiles = await generateAppCode(userMsgText, isAdmin, currentFilesWithEdits);
+        setFiles(updatedFiles);
+        // Refresh active file content if it was changed by AI
+        if (activeFilename && updatedFiles[activeFilename] !== undefined) {
+          setEditedFileContent(updatedFiles[activeFilename]);
+        }
+        setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Code update kar diya hai boss. Dekh le preview." : "Code updated. Preview refreshed.", isStreaming: false } : m));
+      } else {
+        // User wants an explanation or general chat about the code
+        // For explanation, provide the active file's content as context
+        const fileContextToSend = (activeFilename && editedFileContent !== null) ? { content: editedFileContent, name: activeFilename } : undefined;
+
+        await streamGeminiResponse(
+          userMsgText,
+          playgroundMessages, // Pass current playground chat history
+          isAdmin,
+          playgroundAiName, // Custom AI Name for playground
+          isAdmin ? "You are a no-nonsense, street-smart Delhi developer AI. Use Hinglish with local slang, no filters. Your goal is to help the user build/understand apps in the Playground." : "You are a helpful app development assistant in the playground. Explain code and assist in building apps.",
+          (txt) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: txt } : m)),
+          (final) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: final, isStreaming: false } : m)),
+          (err) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Locha ho gaya! ${err.message}` : `Error: ${err.message}`, isStreaming: false } : m)),
+          undefined, // no attachment
+          fileContextToSend // file context for explanation
+        );
+      }
+    } catch (e: any) {
+      console.error("Playground AI interaction error:", e);
+      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Uff! Phir se gadbad. ${e.message || 'Kuch error aa gaya.'}` : `An error occurred: ${e.message}`, isStreaming: false } : m));
+    } finally {
+      setPlaygroundLoading(false);
+    }
   };
 
   const handleDownloadZip = async () => {
-    if (!generatedFiles || !window.JSZip) return;
+    if (!files || !window.JSZip) return;
+    // Ensure all current edits are saved to files state before zipping
+    const filesToZip = { ...files };
+    if (activeFilename && editedFileContent !== null) {
+      filesToZip[activeFilename] = editedFileContent;
+    }
 
     const zip = new window.JSZip();
-    Object.entries(generatedFiles).forEach(([filename, content]) => {
+    Object.entries(filesToZip).forEach(([filename, content]) => {
       zip.file(filename, content);
     });
-
     const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -178,262 +257,275 @@ const PlaygroundOverlay: React.FC<PlaygroundOverlayProps> = ({ isOpen, onClose, 
     URL.revokeObjectURL(url);
   };
 
-  const handleShareApp = async () => {
-    if (!previewUrl) return;
-    const blob = new Blob([previewUrl], { type: 'text/html' });
-    const file = new File([blob], "playground-app.html", { type: 'text/html' });
+  const handleDownloadFile = (filename: string) => {
+    if (!files || files[filename] === undefined) return;
+    const content = (activeFilename === filename && editedFileContent !== null) ? editedFileContent : files[filename];
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: 'My AI Playground App',
-          text: 'Here is an app I built with the Playground AI Builder.',
+  const resetPlayground = () => {
+    setInitialPrompt('');
+    setFiles(null);
+    setActiveFilename(null);
+    setEditedFileContent('');
+    setPreviewHtml(null);
+    setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "Naya shuru karein boss? Kya banayेंगे ab?" : "Starting fresh! What would you like to build?", timestamp: Date.now() }]);
+    setPlaygroundInput('');
+    setPlaygroundLoading(false);
+  };
+
+  const handleOpenNewTab = () => {
+    if (!previewHtml) return;
+    const blob = new Blob([previewHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
+  const handleToggleFullscreen = () => {
+    const iframeElement = previewIframeRef.current;
+    if (iframeElement) {
+      if (!document.fullscreenElement) {
+        iframeElement.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
         });
-      } catch (err) {
-        console.warn("Share cancelled or failed", err);
+      } else {
+        document.exitFullscreen();
       }
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "playground-app.html";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert("App saved as 'playground-app.html'.");
     }
   };
 
-  const handleClose = () => {
-    if (confirm("Close Playground? Unsaved work will be lost.")) {
-      setPrompt('');
-      setGeneratedFiles(null);
-      setPreviewUrl(null);
-      setDevice('desktop');
-      setIsFullScreen(false);
-      setLayoutMode('side');
-      onClose();
-    }
-  };
 
-  // Styles for responsive preview
+  const isWebApp = files && Object.keys(files).some(k => k.endsWith('.html') || k.endsWith('.htm'));
+  const isNativeApp = files && Object.keys(files).some(k => k.includes('AndroidManifest.xml') || k.includes('.java') || k.includes('.kt'));
+
+  // Styles for iframe based on device view
   const iframeStyles = {
-    width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px',
-    height: device === 'desktop' ? '100%' : device === 'tablet' ? '1024px' : '667px',
-    border: device === 'desktop' ? 'none' : `4px solid ${isAdmin ? '#ff003c' : '#00f3ff'}`, // Dynamic border for devices
-    borderRadius: device === 'desktop' ? '0' : '20px',
+    width: deviceView === 'desktop' ? '100%' : deviceView === 'tablet' ? '768px' : '375px',
+    height: deviceView === 'desktop' ? '100%' : deviceView === 'tablet' ? '1024px' : '667px',
+    border: deviceView === 'desktop' ? 'none' : `4px solid rgba(var(--theme-primary-rgb))`,
+    borderRadius: deviceView === 'desktop' ? '0' : '20px',
     transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     backgroundColor: 'white',
-    boxShadow: device === 'desktop' ? 'none' : `0 25px 50px -12px ${isAdmin ? 'rgba(255, 0, 60, 0.5)' : 'rgba(0, 243, 255, 0.5)'}`
+    margin: '0 auto',
+    boxShadow: deviceView === 'desktop' ? 'none' : `0 25px 50px -12px rgba(var(--theme-primary-rgb), 0.5)`
   };
 
-  const containerClasses = layoutMode === 'side'
-    ? "flex-1 flex flex-col md:flex-row h-full overflow-hidden relative"
-    : "flex-1 flex flex-col h-full overflow-hidden relative";
-
-  const leftPanelClasses = layoutMode === 'side'
-    ? `w-full md:w-1/3 lg:w-1/4 bg-black/90 border-r ${themeColors.border} flex flex-col p-6 overflow-y-auto ${isFullScreen ? 'hidden' : 'block'}`
-    : `w-full h-1/2 bg-black/90 border-b ${themeColors.border} flex flex-col p-6 overflow-y-auto ${isFullScreen ? 'hidden' : 'block'}`;
-
-  const rightPanelClasses = isFullScreen 
-    ? "fixed inset-0 z-[110] bg-black flex flex-col" 
-    : "flex-1 bg-black/80 relative flex flex-col transition-all duration-300";
-
   return (
-    <div className={`fixed inset-0 z-[100] bg-[#050510] text-gray-100 flex flex-col animate-fade-in overflow-hidden font-sans`}>
-      {/* Header */}
-      <div className={`flex items-center justify-between px-6 py-4 bg-black/80 border-b ${themeColors.border} flex-none z-10 ${themeColors.bgPanel}`}>
-        <div className="flex items-center gap-4">
-          <div className={`p-2 rounded border border-current ${themeColors.text} ${themeColors.shadow}`}>
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-             </svg>
-          </div>
-          <div>
-            <h2 className={`text-xl font-bold tracking-widest uppercase ${themeColors.text}`}>Playground_Builder</h2>
-            <p className="text-[10px] text-gray-500 font-mono uppercase">Interactive Development Environment</p>
-          </div>
-        </div>
-        <button 
-          onClick={handleClose}
-          className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--bg-body)] animate-fade-in rounded-3xl">
+       {/* Header */}
+       <div className={`p-4 border-b border-[var(--color-border-glass)] flex justify-between items-center glass-panel ${themeColors.adminGlow}`}>
+         <h2 className={`font-bold text-xl ${themeColors.accent}`}>Playground {isAdmin && '(ADMIN)'}</h2>
+         <div className="flex items-center gap-3">
+            {isWebApp && files && (
+              <>
+                <button 
+                  onClick={handleOpenNewTab} 
+                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] text-[var(--color-text-muted)] hover:border-[var(--color-text-base)] hover:text-[var(--color-text-base)] font-bold text-sm uppercase tracking-wider transition-colors items-center gap-2 rounded-xl shadow-ios flex`}
+                  title="Open in New Tab"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                </button>
+                <button 
+                  onClick={handleToggleFullscreen} 
+                  className={`px-4 py-2 bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] text-[var(--color-text-muted)] hover:border-[var(--color-text-base)] hover:text-[var(--color-text-base)] font-bold text-sm uppercase tracking-wider transition-colors items-center gap-2 rounded-xl shadow-ios flex`}
+                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                >
+                  {isFullscreen ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15L3.75 20.25M15 9V4.5M15 9H19.5M15 9L20.25 3.75M15 15v4.5M15 15H19.5M15 15L20.25 20.25" /></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>
+                  )}
+                </button>
+              </>
+            )}
 
-      <div className={containerClasses}>
-        {/* Left Panel: Controls */}
-        <div className={leftPanelClasses}>
-          <div className="space-y-6">
-            <div>
-              <label className={`block text-xs font-bold ${themeColors.text} mb-2 uppercase tracking-wider`}>
-                {generatedFiles ? "Refactor / Update Directive" : "Initial Directive"}
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder={generatedFiles 
-                  ? "Describe changes (e.g. 'Make button red')..."
-                  : "Describe the app you want to build..."}
-                className={`w-full bg-[#0a0a15] border ${themeColors.inputBorder} rounded-lg p-4 text-white placeholder-gray-600 outline-none resize-none h-40 font-mono text-sm focus:border-opacity-100 transition-colors focus:border-current ${themeColors.ring} focus:ring-1`}
-              />
-            </div>
-
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className={`w-full py-4 rounded font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 btn-3d
-                ${isGenerating 
-                  ? 'bg-gray-800 text-gray-500 cursor-not-allowed shadow-none' 
-                  : `${themeColors.button}`}`}
-            >
-              {isGenerating ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {generatedFiles ? "Compiling..." : "Initializing..."}
-                </>
-              ) : (
-                <>
-                  {generatedFiles ? "Update_Build" : "Generate_Build"}
-                </>
-              )}
+            {files && (
+              <button onClick={handleDownloadZip} className={`px-4 py-2 ${themeColors.button} rounded-xl font-bold text-sm shadow-ios`}>
+                Download Project (ZIP)
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 bg-[var(--color-input-bg)] rounded-full text-[var(--color-text-muted)] hover:opacity-80 transition-opacity">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
             </button>
+         </div>
+       </div>
 
-            {error && (
-              <div className="p-4 bg-red-900/20 border border-red-500/50 rounded text-red-400 text-xs font-mono">
-                [ERROR]: {error}
-              </div>
-            )}
+       {/* Main Content Area */}
+       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Left Pane: Controls & File Explorer */}
+          <div className="w-full md:w-1/4 min-w-[250px] p-4 border-b md:border-b-0 md:border-r border-[var(--color-border-glass)] flex flex-col gap-4 glass-panel">
+             {(!files || Object.keys(files).length === 0) ? (
+                <>
+                  <textarea 
+                    className="w-full flex-1 bg-[var(--color-input-bg)] rounded-xl p-3 resize-none outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb))] placeholder-[var(--color-text-muted)] text-sm" 
+                    placeholder={isAdmin ? "Kya banau boss? Jaise 'ek to-do list app, ekdum faadu style mein'" : "Describe the app you want to build..."} 
+                    value={initialPrompt} 
+                    onChange={e => setInitialPrompt(e.target.value)}
+                    disabled={playgroundLoading}
+                  ></textarea>
+                  <button 
+                    onClick={handleInitialGenerate} 
+                    disabled={!initialPrompt.trim() || playgroundLoading} 
+                    className={`py-3 rounded-xl font-bold text-sm shadow-ios transition-opacity ${(!initialPrompt.trim() || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
+                  >
+                    {playgroundLoading ? (isAdmin ? 'Ban raha hai...' : 'Building App...') : (isAdmin ? 'Bana de!' : 'Generate App')}
+                  </button>
+                </>
+             ) : (
+                <div className="flex-1 flex flex-col">
+                  <h3 className="text-sm font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Project Files</h3>
+                  <div className="flex-1 overflow-y-auto space-y-1 pr-1">
+                    {Object.keys(files).map(filename => (
+                      <button 
+                        key={filename} 
+                        onClick={() => handleFileSelect(filename)} 
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-mono transition-colors border flex justify-between items-center
+                          ${activeFilename === filename 
+                            ? `bg-[rgb(var(--theme-primary-rgb),0.1)] border-[rgb(var(--theme-primary-rgb),0.2)] ${themeColors.accent}` 
+                            : `border-transparent hover:bg-[var(--color-input-bg)] text-[var(--color-text-base)]`
+                          }`}
+                      >
+                        <span className="truncate">{filename}</span>
+                        <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(filename); }} className="ml-2 p-1 text-[var(--color-text-muted)] hover:text-[rgb(var(--theme-primary-rgb))] rounded-full opacity-70 hover:opacity-100 transition-opacity">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        </button>
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={resetPlayground} className={`mt-4 w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 transition-colors`}>
+                    Start New Project
+                  </button>
+                </div>
+             )}
+          </div>
 
-            {generatedFiles && (
-              <div className="animate-fade-in space-y-3 pt-4 border-t border-gray-800">
-                 <div className="flex items-center justify-between">
-                   <span className="text-xs font-bold text-green-400 font-mono uppercase">Build_Success</span>
-                   <span className="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400 font-mono border border-gray-700">
-                     {Object.keys(generatedFiles).length} Files
-                   </span>
-                 </div>
-                 
-                 <div className="flex gap-2">
-                   <button
-                     onClick={handleDownloadZip}
-                     className="flex-1 py-3 bg-gray-900 hover:bg-gray-800 border border-gray-700 hover:border-white rounded font-bold transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wider text-gray-300"
-                   >
-                     ZIP
-                   </button>
-                   <button
-                     onClick={handleShareApp}
-                     className={`flex-1 py-3 rounded font-bold transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wider border bg-black/50 ${themeColors.border} ${themeColors.text}`}
-                   >
-                     Share
-                   </button>
-                 </div>
-              </div>
+          {/* Middle Pane: Code Editor & Preview */}
+          <div className="flex-1 flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-[var(--color-border-glass)]">
+            {files && (
+              <>
+                {/* Code Editor */}
+                <div className="h-1/2 flex flex-col border-b border-[var(--color-border-glass)]">
+                  <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-input-bg)] border-b border-[var(--color-border-glass)]">
+                    <span className="text-sm font-bold opacity-60 font-mono text-[var(--color-text-muted)]">{activeFilename || 'No file selected'}</span>
+                  </div>
+                  <textarea 
+                    ref={codeEditorRef}
+                    className="flex-1 bg-[var(--color-bg-code)] font-mono text-sm p-4 resize-none outline-none overflow-auto"
+                    value={editedFileContent} 
+                    onChange={handleCodeChange}
+                    disabled={!activeFilename || playgroundLoading}
+                    spellCheck="false"
+                  />
+                </div>
+
+                {/* Preview */}
+                <div className="h-1/2 flex flex-col relative bg-[var(--bg-body)]">
+                   <div className="flex justify-between items-center px-4 py-2 border-b border-[var(--color-border-glass)] bg-[var(--color-input-bg)]">
+                     <span className="text-sm font-bold opacity-60 font-mono text-[var(--color-text-muted)]">Live Preview {isNativeApp && '(No Live Preview for native apps)'}</span>
+                     {!isNativeApp && (
+                       <div className="flex bg-[var(--color-input-bg)] border border-[var(--color-border-glass)] p-1 gap-1 rounded-lg">
+                         {(['desktop', 'tablet', 'mobile'] as const).map(d => (
+                           <button 
+                             key={d}
+                             onClick={() => setDeviceView(d)}
+                             className={`p-2 transition-all rounded-md ${deviceView === d ? themeColors.toggleActive + ' text-white' : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-glass)]'}`}
+                             title={d}
+                           >
+                            {d === 'desktop' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+                            {d === 'tablet' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
+                            {d === 'mobile' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
+                           </button>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                   <div className="flex-1 flex items-center justify-center p-4">
+                     {previewHtml && !isNativeApp ? (
+                        <iframe 
+                          ref={previewIframeRef} // Attach ref here
+                          srcDoc={previewHtml}
+                          title="Playground Preview"
+                          style={iframeStyles}
+                          sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
+                        />
+                     ) : (
+                        <div className="flex flex-col items-center justify-center opacity-50 text-[var(--color-text-muted)]">
+                           {isNativeApp ? (
+                              <p className="mt-4 text-[10px] text-center max-w-sm">
+                                Native Android projects cannot be previewed directly in browser.
+                              </p>
+                           ) : (
+                              <p className="text-[10px] uppercase tracking-[0.2em] animate-pulse">
+                                  {playgroundLoading ? 'Generating Preview...' : 'No Preview Available'}
+                              </p>
+                           )}
+                        </div>
+                     )}
+                   </div>
+                </div>
+              </>
             )}
           </div>
-        </div>
 
-        {/* Right Panel: Preview */}
-        <div className={rightPanelClasses}>
-          {previewUrl ? (
-            <>
-               {/* Preview Toolbar */}
-               <div className="bg-black/90 px-4 py-2 flex items-center justify-between border-b border-gray-800 flex-none z-20">
-                 <div className="flex items-center gap-4">
-                   <div className="flex bg-black border border-gray-800 rounded p-1 gap-1">
-                     {(['desktop', 'tablet', 'mobile'] as const).map(d => (
-                       <button 
-                         key={d}
-                         onClick={() => setDevice(d)}
-                         className={`p-1.5 rounded transition-colors ${device === d ? themeColors.activeDevice : 'text-gray-600 hover:text-gray-300'}`}
-                       >
-                          {d === 'desktop' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-                          {d === 'tablet' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-                          {d === 'mobile' && <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-
-                 <div className="flex gap-2 relative">
-                    <div ref={layoutDropdownRef} className="relative">
-                      <button
-                        onClick={() => setShowLayoutDropdown(!showLayoutDropdown)}
-                        className="p-1.5 px-3 rounded text-xs font-bold transition-colors border border-gray-800 hover:border-gray-600 flex items-center gap-2 bg-black text-gray-400 hover:text-white"
-                      >
-                         Layout
-                         <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 transition-transform ${showLayoutDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                         </svg>
-                      </button>
-
-                      {showLayoutDropdown && (
-                        <div className={`absolute right-0 top-full mt-2 w-48 bg-black rounded border ${themeColors.border} overflow-hidden animate-fade-in z-50 shadow-xl`}>
-                          <button
-                            onClick={() => { setLayoutMode('side'); setShowLayoutDropdown(false); }}
-                            className={`w-full text-left px-4 py-3 text-xs font-mono hover:bg-white/10 ${layoutMode === 'side' ? themeColors.accent : 'text-gray-400'}`}
-                          >
-                             Split (Side)
-                          </button>
-                          <button
-                            onClick={() => { setLayoutMode('bottom'); setShowLayoutDropdown(false); }}
-                            className={`w-full text-left px-4 py-3 text-xs font-mono hover:bg-white/10 ${layoutMode === 'bottom' ? themeColors.accent : 'text-gray-400'}`}
-                          >
-                             Split (Vertical)
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <button 
-                      onClick={() => setIsFullScreen(!isFullScreen)}
-                      className={`p-1.5 px-3 rounded text-xs font-bold transition-colors border border-gray-800 hover:border-white hover:text-white text-gray-400 flex items-center gap-2 ${isFullScreen ? 'bg-red-900/30 border-red-500 text-red-500' : ''}`}
-                    >
-                      {isFullScreen ? 'Exit Full' : 'Full Screen'}
-                    </button>
-                 </div>
-               </div>
-               
-               {/* Iframe Container */}
-               <div className="flex-1 w-full h-full bg-[#111] flex items-center justify-center overflow-auto p-4 relative">
-                 {isGenerating && (
-                    <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center text-white">
-                        <div className={`animate-spin h-12 w-12 border-4 ${themeColors.loadingBorder} border-t-transparent rounded-full mb-4`}></div>
-                        <p className={`font-mono text-xs uppercase tracking-[0.2em] animate-pulse ${themeColors.loadingText}`}>Constructing_Modules...</p>
-                    </div>
-                 )}
-                 <iframe 
-                   srcDoc={previewUrl}
-                   title="App Preview" 
-                   style={iframeStyles}
-                   className="shadow-2xl"
-                   sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
-                 />
-               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center opacity-30 p-8 text-center text-gray-500">
-              <div className={`w-24 h-24 border-2 border-dashed ${themeColors.inputBorder} rounded-xl flex items-center justify-center mb-6`}>
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                 </svg>
-              </div>
-              <h3 className="text-xl font-bold font-mono uppercase tracking-widest">Awaiting Input</h3>
-              <p className="max-w-md mt-2 text-xs font-mono">Define parameters on the left console to initiate build sequence.</p>
+          {/* Right Pane: Playground AI Chat */}
+          <div className="w-full md:w-1/4 min-h-[250px] p-4 flex flex-col glass-panel"> {/* Added min-h-[250px] for better mobile/stacked layout */}
+            <h3 className="text-sm font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Playground AI Chat</h3>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {playgroundMessages.map((msg) => (
+                <div key={msg.id} className={`flex flex-col max-w-full ${msg.role === Role.USER ? 'items-end' : 'items-start'}`}>
+                  <div className={`relative px-4 py-3 text-[14px] leading-relaxed shadow-sm max-w-[90%]
+                    ${msg.role === Role.USER 
+                      ? themeColors.userBubble 
+                      : themeColors.aiBubble
+                    }`}>
+                    {msg.isStreaming && !msg.text ? (
+                       <div className="flex space-x-1 h-4 items-center">
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce delay-75"></div>
+                          <div className="w-1 h-1 bg-current rounded-full animate-bounce delay-150"></div>
+                       </div>
+                    ) : (
+                      // Use a simplified MarkdownRenderer for chat messages
+                      // For full markdown including code blocks, use MarkdownRenderer
+                      <MarkdownRenderer content={msg.text} />
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div ref={playgroundChatEndRef} className="h-2" />
             </div>
-          )}
-        </div>
-      </div>
+            
+            <div className="mt-4 relative flex-shrink-0"> {/* Added flex-shrink-0 here */}
+              <textarea 
+                className="w-full bg-[var(--color-input-bg)] rounded-xl p-3 pr-10 resize-none outline-none focus:ring-2 focus:ring-[rgb(var(--theme-primary-rgb))] placeholder-[var(--color-text-muted)] text-sm" 
+                placeholder={isAdmin ? "Kya command hai boss? Code change karu ya kuch samjhau?" : "Ask about the code or request changes..."}
+                value={playgroundInput} 
+                onChange={e => setPlaygroundInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handlePlaygroundSend()}
+                rows={3}
+                disabled={!files || playgroundLoading}
+              ></textarea>
+              <button 
+                onClick={handlePlaygroundSend} 
+                disabled={!playgroundInput.trim() || !files || playgroundLoading} 
+                className={`absolute bottom-3 right-3 p-2 rounded-full transition-all shadow-lg 
+                  ${(!playgroundInput.trim() || !files || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
+              >
+                {playgroundLoading ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>}
+              </button>
+            </div>
+          </div>
+       </div>
     </div>
   );
 };
-
 export default PlaygroundOverlay;

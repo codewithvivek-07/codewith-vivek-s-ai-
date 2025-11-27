@@ -36,7 +36,8 @@ export interface AppSettings {
   customPersona: string;
   voiceEnabled: boolean;
   autoRead: boolean;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark'; // Still present but actual colors handled by palette
+  currentPalette: string; // New: Selected color palette
 }
 
 export interface ChatState {

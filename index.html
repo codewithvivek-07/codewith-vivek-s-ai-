@@ -1,79 +1,44 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Interface</title>
+    <title>codewith-vivek's AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+      // Fix for jspdf global variable access
+      window.jspdf = window.jspdf || {};
+      window.jspdf.jsPDF = window.jspdf.jsPDF || jspdf.jsPDF;
+      
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Rajdhani', 'sans-serif'],
-              mono: ['"JetBrains Mono"', 'monospace'],
-            },
-            colors: {
-              neon: {
-                cyan: '#00f3ff',
-                pink: '#ff00ff',
-                purple: '#bc13fe',
-                green: '#0aff00',
-                red: '#ff003c',
-                yellow: '#fcee0a',
-                dark: '#050510'
-              },
-              primary: {
-                50: '#e0faff',
-                100: '#b3f4ff',
-                200: '#80edff',
-                300: '#4de7ff',
-                400: '#26e1ff',
-                500: '#00dbff', 
-                600: '#00afcc',
-                700: '#008399',
-                800: '#005766',
-                900: '#002c33',
-                950: '#00161a',
-              },
-              admin: {
-                 50: '#ffe0e6',
-                 100: '#ffb3c0',
-                 200: '#ff8099',
-                 300: '#ff4d73',
-                 400: '#ff1a4d',
-                 500: '#ff003c', // Cyberpunk Red
-                 600: '#cc0030',
-                 700: '#990024',
-                 800: '#660018',
-                 900: '#33000c',
-                 950: '#1a0006',
-              }
+              sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+              mono: ['SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'monospace'],
             },
             boxShadow: {
-              'neon-cyan': '0 0 10px #00f3ff, 0 0 20px #00f3ff',
-              'neon-red': '0 0 10px #ff003c, 0 0 20px #ff003c',
-              'neon-purple': '0 0 10px #bc13fe, 0 0 20px #bc13fe',
-              '3d': '4px 4px 0px rgba(0,0,0,0.5)',
-              'inner-glow': 'inset 0 0 20px rgba(0, 243, 255, 0.1)',
+              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+              'glass-sm': '0 4px 16px 0 rgba(31, 38, 135, 0.05)',
+              'ios': '0 2px 10px rgba(0,0,0,0.05)',
             },
             animation: {
-              'fade-in': 'fadeIn 0.3s ease-out',
-              'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'float': 'float 6s ease-in-out infinite',
+              'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
               fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
-                '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
               },
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-10px)' },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
               }
             }
           }
@@ -81,90 +46,97 @@
       }
     </script>
     <style>
+      :root {
+        /* Basic Light Mode */
+        --bg-body: #FFFFFF;
+        --color-text-base: #333333;
+        --color-text-muted: #666666;
+        --color-bg-glass: #F8F8F8; /* Solid, light background for panels */
+        --color-border-glass: #E0E0E0; /* Light gray border */
+        --color-shadow-glass: rgba(0, 0, 0, 0.1); /* Simple shadow */
+        --color-bg-code: #F0F0F0;
+        --color-input-bg: #EFEFEF;
+        
+        /* Default Primary/Admin RGB (will be used by JS) */
+        --theme-primary-rgb: 0, 122, 255; /* Blue */
+        --theme-admin-rgb: 255, 59, 48;   /* Red */
+        --theme-accent-rgb: 0, 122, 255;  /* Default to primary */
+      }
+
+      html.dark {
+        /* Basic Dark Mode */
+        --bg-body: #1E1E1E;
+        --color-text-base: #F0F0F0;
+        --color-text-muted: #BBBBBB;
+        --color-bg-glass: #2C2C2C; /* Solid, dark background for panels */
+        --color-border-glass: #444444; /* Dark gray border */
+        --color-shadow-glass: rgba(0, 0, 0, 0.4); /* Simple dark shadow */
+        --color-bg-code: #252526;
+        --color-input-bg: #3A3A3A;
+
+        /* Default Primary/Admin RGB for dark mode */
+        --theme-primary-rgb: 0, 150, 255; /* Brighter Blue for dark mode */
+        --theme-admin-rgb: 255, 80, 70;   /* Brighter Red for dark mode */
+        --theme-accent-rgb: 0, 150, 255;  /* Default to primary */
+      }
+
+      /* Admin specific primary color override (if admin is true) */
+      html[data-admin="true"] {
+        --theme-primary-rgb: var(--theme-admin-rgb);
+        --theme-accent-rgb: var(--theme-admin-rgb);
+      }
+
       body {
-        font-family: 'Rajdhani', sans-serif;
-        background-color: #050510;
-        color: #e0e0e0;
+        font-family: system-ui, -apple-system, BlinkMacMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, sans-serif;
+        background-color: var(--bg-body);
+        color: var(--color-text-base);
         overflow: hidden; 
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
 
-      /* Scanline Effect */
-      body::before {
-        content: " ";
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-        z-index: 2;
-        background-size: 100% 2px, 3px 100%;
-        pointer-events: none;
+      /* Remove glass effects, use solid backgrounds and simpler shadows */
+      .glass-panel {
+        background-color: var(--color-bg-glass);
+        /* backdrop-filter removed */
+        /* -webkit-backdrop-filter removed */
+        border: 1px solid var(--color-border-glass);
+        box-shadow: 0 2px 8px var(--color-shadow-glass); /* Simpler shadow */
       }
 
-      /* Custom Scrollbar */
+      /* .glass-button - removed, relying on component styling via themeColors.button */
+      /* .admin-glow - removed, relying on component styling via themeColors.adminGlow if any */
+
+      /* Scrollbar - keeping as they are not glass specific */
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0a0a1a; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #00f3ff; 
-        border-radius: 2px;
-        box-shadow: 0 0 5px #00f3ff;
+        background: rgba(var(--color-text-muted), 0.3);
+        border-radius: 10px;
+        opacity: 0.7;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #ff00ff; 
-      }
-
-      /* Utilities for Neon 3D */
-      .glass-panel {
-        background: rgba(10, 10, 25, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      }
-
-      .text-glow-cyan { text-shadow: 0 0 5px #00f3ff, 0 0 10px #00f3ff; }
-      .text-glow-red { text-shadow: 0 0 5px #ff003c, 0 0 10px #ff003c; }
-      
-      .neon-border-cyan { border: 1px solid #00f3ff; box-shadow: 0 0 5px #00f3ff, inset 0 0 5px #00f3ff; }
-      .neon-border-red { border: 1px solid #ff003c; box-shadow: 0 0 5px #ff003c, inset 0 0 5px #ff003c; }
-
-      .btn-3d {
-        transition: all 0.1s;
-        transform: translateY(0);
-        box-shadow: 0 4px 0 rgba(0,0,0,0.5);
-      }
-      .btn-3d:active {
-        transform: translateY(4px);
-        box-shadow: 0 0 0 rgba(0,0,0,0);
-      }
-      .btn-3d:disabled {
-        transform: translateY(2px);
-        box-shadow: 0 0 0;
-        opacity: 0.5;
-        cursor: not-allowed;
+        background: rgba(var(--color-text-base), 0.4);
       }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4"
   }
 }
 </script>
 </head>
-  <body class="h-full bg-[#050510] text-gray-100 antialiased selection:bg-neon-pink selection:text-white">
+  <body class="h-full antialiased selection:bg-[rgba(var(--theme-primary-rgb),0.3)] selection:text-current">
     <div id="root" class="h-full relative z-10"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
