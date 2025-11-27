@@ -22,6 +22,9 @@ const NAME_STORAGE_KEY = 'codewithvivek_ai_name_v3'; // Kept for storing custom 
 const SETTINGS_KEY = 'codewithvivek_settings_v4';
 const ADMIN_CODE = '000000'; 
 
+// New "Hooded Hacker" Logo for Admin Mode (Stealth Mode Reveal)
+const HACKER_LOGO_URI = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBzdHlsZT0iYmFja2dyb3VuZDpibGFjayI+CiAgPCEtLSBIb29kIC0tPgogIDxwYXRoIGQ9Ik01MCA1IEMyNSA1IDEwIDM1IDEwIDYwIFYxMDAgSDkwIFY2MCBDOTAgMzUgNzUgNSA1MCA1IFoiIGZpbGw9IiMyMmM1NWUiLz4KICA8IS0tIERhcmsgRmFjZSBBcmVhIC0tPgogIDxlbGxpcHNlIGN4PSI1MCIgY3k9IjYwIiByeD0iMjUiIHJ5PSIzMCIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0yNSA2MCBDMjUgODUgNDAgOTAgNTAgOTAgQzYwIDkwIDc1IDg1IDc1IDYwIEM3NSA0MCA2MCAzMCA1MCAzMCBDNDAgMzAgMjUgNDAgMjUgNjAgWiIgZmlsbD0iIzBkMGQwZCIvPgogIDwhLS0gRXllcyAoR2xvd2luZykgLS0+CiAgPHJlY3QgeD0iMzgiIHk9IjU1IiB3aWR0aD0iMTAiIGhlaWdodD0iMyIgcng9IjEiIGZpbGw9IiMwMGZmMDAiIG9wYWNpdHk9IjAuOSIvPgogIDxyZWN0IHg9IjUyIiB5PSI1NSIgd2lkdGg9PSIxMCIgaGVpZ2h0PSIzIiByeD0iMSIgZmlsbD0iIzAwZmYwMCIgb3BhY2l0eT0iMC45Ii8+CiAgPCEtLSBCaW5hcnkgRGlnaXRzIEVmZmVjdCAtLT4KICA8cGF0aCBkPSZNMTUgMjAgTDE1IDQwIE04NSAyMCBMODUgNDAiIHN0cm9rZT0iIzIyYzU1ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI0LDQiIG9wYWNpdHk9IjAuNSIvPgo8L3N2Zz4=';
+
 const MASTER_PROMPTS = [
   { title: "Quantum Computing", prompt: "Explain quantum computing in simple terms:" },
   { title: "Sci-Fi Story", prompt: "Write a short sci-fi story about a robot who loves gardening:" },
@@ -82,7 +85,8 @@ export default function App() {
     voiceEnabled: true,
     autoRead: false,
     theme: 'dark', 
-    currentPalette: 'cyberpunk'
+    currentPalette: 'cyberpunk',
+    logoUrl: '' // Empty by default for Stealth Mode logic (Fire vs Hacker)
   });
   
   const [attachment, setAttachment] = useState<{data: string, mimeType: string} | null>(null);
@@ -101,6 +105,27 @@ export default function App() {
 
   // Derived state to fix 'isTyping' error
   const isTyping = input.length > 0;
+
+  // --- STEALTH MODE LOGIC ---
+  // If settings.logoUrl is set, use it.
+  // Else if Admin Mode, use HACKER_LOGO_URI.
+  // Else (Normal Mode), use undefined (which renders default Fire SVG).
+  const currentLogoSrc = settings.logoUrl || (isAdmin ? HACKER_LOGO_URI : undefined);
+
+  // Update Favicon based on mode
+  useEffect(() => {
+    const favicon = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+    if (favicon) {
+      if (settings.logoUrl) {
+        favicon.href = settings.logoUrl;
+      } else if (isAdmin) {
+        favicon.href = HACKER_LOGO_URI;
+      } else {
+        // Default Fire SVG
+        favicon.href = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>";
+      }
+    }
+  }, [isAdmin, settings.logoUrl]);
 
   // --- INITIALIZATION ---
   useEffect(() => {
@@ -459,11 +484,18 @@ export default function App() {
              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`p-2 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`}>
                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
              </button>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-input-bg)] shadow-inner overflow-hidden`}>
-               <div className={`w-full h-full flex items-center justify-center ${themeColors.accent}`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clipRule="evenodd" /></svg>
-               </div>
+             
+            {/* Logo System - Display custom logo if available, else display fire icon */}
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-input-bg)] shadow-inner overflow-hidden border border-[rgba(var(--color-panel-border-rgb),1)]`}>
+               {currentLogoSrc ? (
+                 <img src={currentLogoSrc} alt="App Logo" className="w-full h-full object-cover" />
+               ) : (
+                 <div className={`w-full h-full flex items-center justify-center ${themeColors.accent}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" /></svg>
+                 </div>
+               )}
             </div>
+
             <div>
                  <div className="flex items-center">
                     <h1 className="font-bold text-lg tracking-tight">{aiName}</h1>
@@ -675,6 +707,14 @@ export default function App() {
                     <label className="block text-xs font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Custom Persona</label>
                     <textarea value={settings.customPersona} onChange={e => setSettings({...settings, customPersona: e.target.value})} className="w-full bg-[var(--color-input-bg)] border-none rounded-xl p-3 text-sm resize-none h-24 focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)]" placeholder="How should I behave?" />
                  </div>
+                 
+                 {/* New: Custom Logo Input */}
+                 <div>
+                    <label className="block text-xs font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Custom Logo URL</label>
+                    <input type="text" value={settings.logoUrl || ''} onChange={e => setSettings({...settings, logoUrl: e.target.value})} className="w-full bg-[var(--color-input-bg)] border-none rounded-xl px-4 py-3 text-sm focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)]" placeholder="Paste image URL here..." />
+                    <p className="text-[10px] opacity-50 mt-1 ml-1">Leave empty for default Fire logo.</p>
+                 </div>
+
                  <div>
                     <label className="block text-xs font-bold opacity-60 uppercase mb-2 text-[var(--color-text-muted)]">Color Palette</label>
                     <div className="grid grid-cols-2 gap-2">

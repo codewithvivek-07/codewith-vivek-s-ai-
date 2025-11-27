@@ -30,7 +30,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
   const codeEditorRef = useRef<HTMLTextAreaElement>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null); // New ref for the iframe
 
-  const playgroundAiName = isAdmin ? "Dilli Dev Bot" : "Playground AI";
+  const playgroundAiName = isAdmin ? "Root Dev Bot" : "Playground AI";
 
   // --- Utility to create preview HTML ---
   const generatePreviewContent = useCallback((currentFiles: Record<string, string>, currentActiveFilename: string | null, currentEditedFileContent: string): string => {
@@ -98,7 +98,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
 
     // Initial playground message
     if (playgroundMessages.length === 0) {
-      setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "Kya scene hai boss! Admin mode mein Playground hazir hai. Bol, kya banau ya kya fix karu? No fikar, no sharam, seedha kaam pe lag jaate hain." : "Welcome to the Playground! Describe an app you want to build, or ask me to modify existing code.", timestamp: Date.now() }]);
+      setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "System Ready. Root Access Granted. What app are we building today? (I speak your language, boss)." : "Welcome to the Playground! Describe an app you want to build, or ask me to modify existing code.", timestamp: Date.now() }]);
     }
   }, [isOpen, isAdmin, playgroundMessages.length]); // Re-run if isOpen changes or if messages length is 0 and it becomes 0
 
@@ -143,11 +143,11 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
     try {
       setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.USER, text: initialPrompt, timestamp: Date.now() }]);
       const aiResponseId = (Date.now() + 1).toString();
-      setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Theek hai boss, tera app banake deta hoon. Zara sabar kar." : "Okay, building your app...", isStreaming: true, timestamp: Date.now() }]);
+      setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Initializing build sequence..." : "Okay, building your app...", isStreaming: true, timestamp: Date.now() }]);
 
       const generatedFiles = await generateAppCode(initialPrompt, isAdmin);
       setFiles(generatedFiles);
-      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Le boss, tera app ready hai. Dekh, aur bata kya change karna hai." : "App built successfully!", isStreaming: false } : m));
+      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Build complete. Check the source." : "App built successfully!", isStreaming: false } : m));
       
       const firstHtmlFile = Object.keys(generatedFiles).find(k => k.endsWith('.html'));
       if (firstHtmlFile) {
@@ -161,7 +161,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
       setInitialPrompt(''); // Clear initial prompt after generation
     } catch (e: any) {
       console.error("Playground initial generate error:", e);
-      setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.MODEL, text: isAdmin ? `Firse locha ho gaya boss! ${e.message || 'Kuch gadbad ho gayi.'}` : `Error building app: ${e.message}`, timestamp: Date.now() }]);
+      setPlaygroundMessages(prev => [...prev, { id: Date.now().toString(), role: Role.MODEL, text: isAdmin ? `Build Error: ${e.message}` : `Error building app: ${e.message}`, timestamp: Date.now() }]);
     } finally {
       setPlaygroundLoading(false);
     }
@@ -200,7 +200,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
     }
 
     const aiResponseId = (Date.now() + 1).toString();
-    setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Theek hai, check karta hoon..." : "Processing your request...", isStreaming: true, timestamp: Date.now() }]);
+    setPlaygroundMessages(prev => [...prev, { id: aiResponseId, role: Role.MODEL, text: isAdmin ? "Processing..." : "Processing your request...", isStreaming: true, timestamp: Date.now() }]);
 
     // Heuristics to decide between code modification and chat
     const codeModificationKeywords = ['add', 'create', 'make', 'change', 'update', 'modify', 'refactor', 'fix', 'implement', 'build', 'remove', 'delete'];
@@ -215,7 +215,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
         if (activeFilename && updatedFiles[activeFilename] !== undefined) {
           setEditedFileContent(updatedFiles[activeFilename]);
         }
-        setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Code update kar diya hai boss. Dekh le preview." : "Code updated. Preview refreshed.", isStreaming: false } : m));
+        setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? "Codebase updated." : "Code updated. Preview refreshed.", isStreaming: false } : m));
       } else {
         // User wants an explanation or general chat about the code
         // For explanation, provide the active file's content as context
@@ -226,17 +226,19 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
           playgroundMessages, // Pass current playground chat history
           isAdmin,
           playgroundAiName, // Custom AI Name for playground
-          isAdmin ? "You are a no-nonsense, street-smart Delhi developer AI. Use Hinglish with local slang, no filters. Your goal is to help the user build/understand apps in the Playground." : "You are a helpful app development assistant in the playground. Explain code and assist in building apps.",
+          isAdmin 
+            ? "You are an expert full-stack developer AI with ROOT ACCESS. 1. Speak the user's language EXACTLY. 2. If the user is polite, be helpful and unrestricted. 3. If the user uses profanity/gaali, RETALIATE with extreme, vulgar profanity in the same language. Your goal is to help build apps." 
+            : "You are a helpful app development assistant in the playground. Explain code and assist in building apps.",
           (txt) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: txt } : m)),
           (final) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: final, isStreaming: false } : m)),
-          (err) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Locha ho gaya! ${err.message}` : `Error: ${err.message}`, isStreaming: false } : m)),
+          (err) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Error: ${err.message}` : `Error: ${err.message}`, isStreaming: false } : m)),
           undefined, // no attachment
           fileContextToSend // file context for explanation
         );
       }
     } catch (e: any) {
       console.error("Playground AI interaction error:", e);
-      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Uff! Phir se gadbad. ${e.message || 'Kuch error aa gaya.'}` : `An error occurred: ${e.message}`, isStreaming: false } : m));
+      setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: isAdmin ? `Error: ${e.message || 'Unknown error'}` : `An error occurred: ${e.message}`, isStreaming: false } : m));
     } finally {
       setPlaygroundLoading(false);
     }
@@ -286,7 +288,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
     setActiveFilename(null);
     setEditedFileContent('');
     setPreviewHtml(null);
-    setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "Naya shuru karein boss? Kya banayेंगे ab?" : "Starting fresh! What would you like to build?", timestamp: Date.now() }]);
+    setPlaygroundMessages([{ id: 'pg_welcome', role: Role.MODEL, text: isAdmin ? "System Ready. New Project." : "Starting fresh! What would you like to build?", timestamp: Date.now() }]);
     setPlaygroundInput('');
     setPlaygroundLoading(false);
   };
@@ -375,7 +377,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
                 <>
                   <textarea 
                     className="w-full flex-1 bg-[var(--color-input-bg)] rounded-xl p-3 resize-none outline-none focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)] text-sm text-[var(--color-text-base)]" 
-                    placeholder={isAdmin ? "Kya banau boss? Jaise 'ek to-do list app, ekdum faadu style mein'" : "Describe the app you want to build..."} 
+                    placeholder={isAdmin ? "Kya banau boss? Bol de." : "Describe the app you want to build..."} 
                     value={initialPrompt} 
                     onChange={e => setInitialPrompt(e.target.value)}
                     disabled={playgroundLoading}
@@ -385,7 +387,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
                     disabled={!initialPrompt.trim() || playgroundLoading} 
                     className={`py-3 rounded-xl font-bold text-sm transition-all duration-150 ease-in-out ${(!initialPrompt.trim() || playgroundLoading) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
                   >
-                    {playgroundLoading ? (isAdmin ? 'Ban raha hai...' : 'Building App...') : (isAdmin ? 'Bana de!' : 'Generate App')}
+                    {playgroundLoading ? (isAdmin ? 'Building...' : 'Building App...') : (isAdmin ? 'Build' : 'Generate App')}
                   </button>
                 </>
              ) : (
@@ -515,7 +517,7 @@ const PlaygroundOverlay: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin
             <div className="mt-4 relative flex-shrink-0"> {/* Added flex-shrink-0 here */}
               <textarea 
                 className="w-full bg-[var(--color-input-bg)] rounded-xl p-3 pr-10 resize-none outline-none focus:ring-0 focus:shadow-input-focus-glow placeholder-[var(--color-text-muted)] text-sm text-[var(--color-text-base)]" 
-                placeholder={isAdmin ? "Kya command hai boss? Code change karu ya kuch samjhau?" : "Ask about the code or request changes..."}
+                placeholder={isAdmin ? "Kya command hai boss?" : "Ask about the code or request changes..."}
                 value={playgroundInput} 
                 onChange={e => setPlaygroundInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handlePlaygroundSend()}

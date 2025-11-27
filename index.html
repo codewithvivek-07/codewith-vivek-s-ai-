@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>X-Fire AI</title>
+    <meta name="theme-color" content="#000000" />
+    <title>X-Fire</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" id="dynamic-favicon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <script type="importmap">
     {
       "imports": {
@@ -257,5 +260,23 @@
   <body class="h-full antialiased selection:bg-[rgba(var(--theme-primary-rgb),0.3)] selection:text-current">
     <div id="root" class="h-full relative z-10"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          try {
+             // Explicitly resolve sw.js relative to window.location to avoid origin mismatch errors
+             // caused by <base> tags or environment redirects.
+             // We check if window.location.href is a valid URL first.
+             const base = window.location.href;
+             const swUrl = new URL('sw.js', base).href;
+             navigator.serviceWorker.register(swUrl).catch((err) => {
+               console.warn('Service Worker registration failed (common in preview environments):', err);
+             });
+          } catch (e) {
+             console.log('Service Worker registration skipped: Invalid base URL', e);
+          }
+        });
+      }
+    </script>
   </body>
 </html>

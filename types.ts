@@ -38,6 +38,7 @@ export interface AppSettings {
   autoRead: boolean;
   theme: 'light' | 'dark'; // Still present but actual colors handled by palette
   currentPalette: string; // New: Selected color palette
+  logoUrl?: string; // New: Custom Logo URL
 }
 
 export interface ChatState {
