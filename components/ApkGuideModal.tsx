@@ -30,9 +30,9 @@ const ApkGuideModal: React.FC<ApkGuideModalProps> = ({ isOpen, onClose, isAdmin 
             <h3 className="font-bold text-lg mb-2 text-[var(--color-text-base)]">Method 2: Admin Mode Export</h3>
             <p className="text-sm opacity-70 mb-4 text-[var(--color-text-muted)]">Generate raw Android Studio source code directly.</p>
             <ol className="list-decimal list-inside space-y-2 text-sm text-[var(--color-text-base)]">
-               <li>Enable Admin Mode {isAdmin ? '✅' : '😈'}.</li>
-               <li>Type <code>/build android app for...</code></li>
-               <li>Download the generated ZIP.</li>
+               <li>Enable Admin Mode {isAdmin ? <span className="text-green-500 font-bold">✅ ON</span> : <span className="text-red-500 font-bold">😈 OFF</span>}.</li>
+               <li>Go to Playground, type <code>/build android app for...</code></li>
+               <li>Download the generated ZIP from the chat.</li>
                <li>Open in Android Studio and compile.</li>
             </ol>
           </div>

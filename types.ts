@@ -1,4 +1,5 @@
 
+
 export enum Role {
   USER = 'user',
   MODEL = 'model'
@@ -46,4 +47,11 @@ export interface ChatState {
   currentSessionId: string | null;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface SavedApp {
+  id: string;
+  title: string;
+  files: Record<string, string>;
+  timestamp: number;
 }
