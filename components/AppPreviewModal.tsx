@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 declare global {
   interface Window {
@@ -14,28 +14,19 @@ interface AppPreviewModalProps {
 }
 
 const AppPreviewModal: React.FC<AppPreviewModalProps> = ({ isOpen, onClose, files, isAdmin = false }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && files) {
-      createPreview(files);
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [isOpen, files]);
-
-  const createPreview = (files: Record<string, string>) => {
-    const isAndroidProject = Object.keys(files).some(key => key.includes('AndroidManifest.xml') || key.includes('.java') || key.includes('.kt'));
+  const createPreviewHtml = useCallback((currentFiles: Record<string, string>) => {
+    const isAndroidProject = Object.keys(currentFiles).some(key => key.includes('AndroidManifest.xml') || key.includes('.java') || key.includes('.kt'));
 
     if (isAndroidProject) {
-      setPreviewUrl(null); // No direct preview for native projects
-      return;
+      return ''; // No direct preview for native projects
     }
 
-    const indexKey = Object.keys(files).find(k => k.toLowerCase() === 'index.html' || k.toLowerCase() === 'index.htm' || k.toLowerCase() === 'main.html') 
-                  || Object.keys(files).find(k => k.endsWith('.html'));
+    const indexKey = Object.keys(currentFiles).find(k => k.toLowerCase() === 'index.html' || k.toLowerCase() === 'index.htm' || k.toLowerCase() === 'main.html') 
+                  || Object.keys(currentFiles).find(k => k.endsWith('.html'));
     
-    let html = indexKey ? files[indexKey] : '';
+    let html = indexKey ? currentFiles[indexKey] : '';
     
     if (!html) {
         html = `<html><body style="background:var(--bg-body);color:rgb(${isAdmin ? 'var(--theme-admin-rgb)' : 'var(--theme-primary-rgb)'});display:flex;align-items:center;justify-content:center;height:100vh;font-family:var(--font-sans);text-transform:uppercase;"><h2>ERROR: ENTRY_POINT_MISSING</h2></body></html>`;
@@ -62,20 +53,33 @@ const AppPreviewModal: React.FC<AppPreviewModalProps> = ({ isOpen, onClose, file
        }
     };
 
-    Object.entries(files).forEach(([filename, content]) => {
+    Object.entries(currentFiles).forEach(([filename, content]) => {
         if (filename === indexKey) return;
         if (filename.endsWith('.css')) injectResource('style', filename, content);
         if (filename.endsWith('.js')) injectResource('script', filename, content);
     });
 
-    setPreviewUrl(html);
-  };
+    return html;
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isOpen && files) {
+      const html = createPreviewHtml(files);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setIframeUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setIframeUrl(null);
+    }
+  }, [isOpen, files, createPreviewHtml]);
 
   const handleOpenNewTab = () => {
-    if (!previewUrl) return;
-    const blob = new Blob([previewUrl], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    if (!iframeUrl) return;
+    window.open(iframeUrl, '_blank');
   };
 
   const handleDownloadZip = async () => {
@@ -149,9 +153,9 @@ const AppPreviewModal: React.FC<AppPreviewModalProps> = ({ isOpen, onClose, file
 
           {/* Iframe Area */}
           <div className="flex-1 bg-[var(--bg-body)] relative overflow-auto p-4 sm:p-8 flex items-center justify-center">
-             {previewUrl ? (
+             {iframeUrl && !isAndroidProject ? (
                 <iframe 
-                  srcDoc={previewUrl}
+                  src={iframeUrl}
                   title="App Preview"
                   style={{
                     width: '100%',
@@ -163,7 +167,7 @@ const AppPreviewModal: React.FC<AppPreviewModalProps> = ({ isOpen, onClose, file
                     margin: '0 auto',
                     boxShadow: `0 25px 50px -12px rgba(${primaryColorRgb}, 0.5)`
                   }}
-                  sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
+                  sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
                 />
              ) : (
                 <div className="flex flex-col items-center justify-center opacity-50">

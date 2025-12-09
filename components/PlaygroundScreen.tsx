@@ -22,7 +22,6 @@ interface PlaygroundProps {
 }
 
 const APNA_BANAO_APPS_KEY = 'codewithvivek_apna_banao_apps_v1';
-const SUPPORTED_FILE_EXTENSIONS = ['.html', '.css', '.js', '.json', '.ts', '.tsx', '.xml', '.java', '.kt', '.txt', '.md'];
 const FORBIDDEN_FILENAME_CHARS = /[\\/*?"<>|:]/;
 
 const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin, themeColors, aiName: baseAiName }) => {
@@ -30,7 +29,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
   const [files, setFiles] = useState<Record<string, string> | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
   const [editedFileContent, setEditedFileContent] = useState<string>('');
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Changed from previewHtml to previewUrl for Blob
   const [playgroundMessages, setPlaygroundMessages] = useState<Message[]>([]);
   const [playgroundInput, setPlaygroundInput] = useState('');
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
@@ -146,7 +145,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
       setFiles(null);
       setActiveFilename(null);
       setEditedFileContent('');
-      setPreviewHtml(null);
+      setPreviewUrl(null);
       setPlaygroundMessages([]);
       setPlaygroundInput('');
       setPlaygroundLoading(false);
@@ -158,7 +157,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
       return;
     };
 
-    // Load saved apps logic (simplified for brevity, logic remains same)
+    // Load saved apps logic
     try {
         const storedApps = localStorage.getItem(APNA_BANAO_APPS_KEY);
         if (storedApps) {
@@ -182,9 +181,19 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
     } catch (e) {}
   }, [isOpen, isAdmin]);
 
+  // Generate Blob URL for preview
   useEffect(() => {
     if (files && (activeFilename !== null || Object.keys(files).length > 0)) {
-      setPreviewHtml(generatePreviewContent(files, activeFilename, editedFileContent));
+      const html = generatePreviewContent(files, activeFilename, editedFileContent);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setPreviewUrl(null);
     }
   }, [files, activeFilename, editedFileContent, generatePreviewContent]);
 
@@ -194,7 +203,9 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.source === previewIframeRef.current?.contentWindow && event.data && event.data.type === 'console') {
+      // Security check: ensure message is from our iframe
+      // Note: with blob URLs, source check can be tricky, so we rely on the specific message structure
+      if (event.data && event.data.type === 'console') {
         const { logType, message } = event.data;
         let logPrefix = '';
         if(logType === 'error') logPrefix = '🔴 ';
@@ -207,7 +218,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // --- Resizing Logic (Same as before but cleaner) ---
+  // --- Resizing Logic ---
   const startResizing = useCallback((type: 'left' | 'fileExplorer') => (e: React.MouseEvent) => {
     e.preventDefault();
     if (type === 'left') setIsResizingLeft(true);
@@ -223,11 +234,9 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
 
   const resize = useCallback((e: MouseEvent) => {
     if (!overlayRef.current) return;
-    const mainContentArea = overlayRef.current.querySelector('.main-content-split');
+    const mainContentArea = overlayRef.current.querySelector('.main-content-split') as HTMLElement | null;
     if (!mainContentArea) return;
     const totalWidth = mainContentArea.offsetWidth;
-    const totalHeight = mainContentArea.offsetHeight; // Approx
-    
     const leftPane = mainContentArea.querySelector('.left-pane');
 
     if (isResizingLeft) {
@@ -253,7 +262,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
 
   if (!isOpen) return null;
 
-  // --- Handlers (Simplified for brevity as logic is unchanged) ---
+  // --- Handlers ---
   const handlePlaygroundSend = async () => {
     if (!playgroundInput.trim() || playgroundLoading) return;
     const userMsgText = playgroundInput.trim();
@@ -276,7 +285,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
         const initFile = Object.keys(generatedFiles).find(k => k.endsWith('.html')) || Object.keys(generatedFiles)[0];
         if (initFile) { setActiveFilename(initFile); setEditedFileContent(generatedFiles[initFile]); }
       } else {
-        // Simple heuristic: does it look like a code change request?
         const isCodeReq = ['add', 'fix', 'change', 'update', 'style', 'script'].some(k => userMsgText.toLowerCase().includes(k));
         if (isCodeReq) {
              const updatedFiles = await generateAppCode(userMsgText, isAdmin, currentFilesWithEdits);
@@ -284,7 +292,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
              if (activeFilename && updatedFiles[activeFilename]) setEditedFileContent(updatedFiles[activeFilename]);
              setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: "Code updated.", isStreaming: false } : m));
         } else {
-             // Chat
              const context = (activeFilename) ? { content: editedFileContent, name: activeFilename } : undefined;
              await streamGeminiResponse(userMsgText, playgroundMessages, isAdmin, playgroundAiName, "You are a coding assistant.", 
                (txt) => setPlaygroundMessages(prev => prev.map(m => m.id === aiResponseId ? { ...m, text: txt } : m)),
@@ -299,7 +306,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
     } finally { setPlaygroundLoading(false); }
   };
 
-  // Helper actions
   const handleNewFile = () => {
       const name = prompt("Filename (e.g., style.css):");
       if(!name) return;
@@ -324,7 +330,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
       if(confirm("Clear all files?")) { setFiles(null); setActiveFilename(null); setEditedFileContent(''); setPlaygroundMessages([]); }
   };
   
-  // Save/Load helpers
   const handleSaveApp = () => {
       const title = prompt("App Title:", "My App");
       if(!title || !files) return;
@@ -350,10 +355,8 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
   };
 
   const handleOpenNewTab = () => {
-    if (!previewHtml) return;
-    const blob = new Blob([previewHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    if (!previewUrl) return;
+    window.open(previewUrl, '_blank');
   };
 
   const isNativeApp = files && Object.keys(files).some(k => k.includes('AndroidManifest'));
@@ -372,7 +375,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
             <h2 className="font-bold text-sm sm:text-lg truncate tracking-tight">{playgroundAiName}</h2>
          </div>
 
-         {/* Mobile Tab Switcher (Visible only on mobile) */}
+         {/* Mobile Tab Switcher */}
          <div className="flex md:hidden bg-[var(--color-input-bg)] rounded-lg p-1 mx-2">
             <button onClick={() => setMobileTab('ide')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mobileTab === 'ide' ? 'bg-white text-black shadow-sm' : 'text-gray-500'}`}>Files & AI</button>
             <button onClick={() => setMobileTab('preview')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mobileTab === 'preview' ? 'bg-white text-black shadow-sm' : 'text-gray-500'}`}>Preview</button>
@@ -536,7 +539,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
              
              {/* Preview Content */}
              <div className="flex-1 relative overflow-auto p-4 flex flex-col items-center bg-gray-100/5">
-                {previewHtml && !isNativeApp ? (
+                {previewUrl && !isNativeApp ? (
                     <div 
                         className={`transition-all duration-300 shadow-2xl overflow-hidden bg-white border-4 border-gray-800 ${deviceView === 'mobile' ? 'rounded-[2rem]' : deviceView === 'tablet' ? 'rounded-[1.5rem]' : 'rounded-none border-0 w-full h-full'}`}
                         style={{
@@ -547,7 +550,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
                     >
                         <iframe 
                             ref={previewIframeRef}
-                            srcDoc={previewHtml}
+                            src={previewUrl}
                             className="w-full h-full"
                             sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
                         />

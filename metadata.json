@@ -3,6 +3,7 @@
   "description": "The X-Fire AI: A limitless knowledge engine powered by Gemini 2.5 with real-time Google Search grounding. Access information on any topic instantly.",
   "requestFramePermissions": [
     "microphone",
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

@@ -7,6 +7,12 @@
     <title>X-Fire</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" id="dynamic-favicon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+    
+    <!-- Preconnect for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script type="importmap">
     {
       "imports": {
@@ -15,7 +21,7 @@
         "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
         "vite": "https://aistudiocdn.com/vite@^7.2.4",
         "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0"
       }
     }
     </script>
@@ -49,6 +55,7 @@
               'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'border-pulse': 'borderPulse 2s infinite ease-in-out',
+              'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
             },
             keyframes: {
               fadeIn: {
@@ -62,6 +69,11 @@
               borderPulse: {
                 '0%, 100%': { borderColor: 'rgba(var(--theme-primary-rgb), 0.2)' },
                 '50%': { borderColor: 'rgba(var(--theme-primary-rgb), 0.4)' },
+              },
+              shake: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+                '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' }
               }
             }
           }
@@ -69,8 +81,6 @@
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&display=swap');
-
       :root {
         /* Basic Light Mode */
         --bg-body: #FFFFFF;
@@ -264,13 +274,10 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           try {
-             // Explicitly resolve sw.js relative to window.location to avoid origin mismatch errors
-             // caused by <base> tags or environment redirects.
-             // We check if window.location.href is a valid URL first.
              const base = window.location.href;
              const swUrl = new URL('sw.js', base).href;
              navigator.serviceWorker.register(swUrl).catch((err) => {
-               console.warn('Service Worker registration failed (common in preview environments):', err);
+               console.warn('Service Worker registration failed:', err);
              });
           } catch (e) {
              console.log('Service Worker registration skipped: Invalid base URL', e);
