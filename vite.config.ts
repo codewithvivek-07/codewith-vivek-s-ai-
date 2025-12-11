@@ -15,14 +15,5 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist'
     },
-    // --- Vercel/Netlify Deployment Guide ---
-    // For Vercel/Netlify, no special configuration is typically needed in vite.config.ts
-    // as they automatically detect Vite projects and build them.
-    //
-    // Critical Step: Set the 'API_KEY' environment variable in your Vercel/Netlify project settings.
-    // Go to your project dashboard -> Settings -> Environment Variables.
-    // Add a new variable with Name: API_KEY and Value: YOUR_GEMINI_API_KEY.
-    // This variable will be injected into 'process.env.API_KEY' during the build process.
-    // ----------------------------------------
   };
 });
