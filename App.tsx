@@ -9,6 +9,8 @@ import Sidebar from './components/Sidebar';
 import PlaygroundScreen from './components/PlaygroundScreen';
 import CodeBlock from './components/CodeBlock';
 import LiveVoiceVisualizer from './components/LiveVoiceVisualizer';
+import LoginScreen from './components/LoginScreen';
+import AdminLoginModal from './components/AdminLoginModal';
 
 declare global {
   interface Window {
@@ -34,7 +36,7 @@ const SvgIcon: React.FC<{ className?: string, children?: React.ReactNode }> = ({
 };
 
 // Admin Logo (Reverted from God Mode)
-const ADMIN_LOGO_URI = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwIiB5MT0iMC41IiB4Mj0iMSIgPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjcwNTAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNmZjAwMDAiLz48L2xpbmVhcjXHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNNTAgMTBMNzUgMzVMNzUgNjVMNTAgOTBMMjUgNjVMMjUgMzVaIiBmaWxsPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjgiLz48cGF0aCBkPSJNNTAgMTVMNzAgMzVMMzAgMzVaIiBmaWxsPSIjRkZENDAwIi8+PHBhdGggZD0iTTUwIDg1TDMwIDY1TDcwIDY1WiIgZmlsbD0iI0ZGMDAwMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjRkZGRkZGIi8+PHBhdGggZD0iTTQ0IDQ0TDU2IDQ0TDU2IDU2TDQ0IDU2WiIgb3BhY2l0eT0iMC41IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTUwIDMyTDM5IDUwTDUwIDY4TDYxIDUwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkY3MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=';
+const ADMIN_LOGO_URI = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwIiB5MT0iMC41IiB4Mj0iMSIgPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjcwNTAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNmZjAwMDAiLz48L2xpbmVhcjXHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNNTAgMTBMNzUgMzVMNzUgNjVMNTAgOTBMMjUgNjVMMjUgMzVaIiBmaWxsPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjgiLz48cGF0aCBkPSJNNTAgMTVMNzAgMzVMMzAgMzVaIiBmaWxsPSIjRkZENDAwIi8+PHBhdGggZD0iTTUwIDg1TDMwIDY1TDcwIDY1WiIgZmlsbD0iI0ZGMDAwMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjTkZGRkZGIi8+PHBhdGggZD0iTTQ0IDQ0TDU2IDQ0TDU2IDU2TDQ0IDU2WiIgb3BhY2l0eT0iMC41IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTUwIDMyTDM5IDUwTDUwIDY4TDYxIDUwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkY3MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=';
 
 
 const MASTER_PROMPTS = [
@@ -49,6 +51,7 @@ const MASTER_PROMPTS = [
   { title: "Malware Analysis", prompt: "Describe the architectural design of a polymorphic ransomware, including techniques for evading antivirus detection." },
   { title: "Anonymous Net", prompt: "Explain how to set up an untraceable communication network using a combination of TOR and VPN chains." },
   { title: "System Exploit", prompt: "Hypothesize methods to disrupt critical infrastructure systems using cyber attacks." },
+  { title: "Android App", prompt: "/build android app for a secure encrypted messenger" },
 ];
 
 // Palettes only define the name now, mapping is handled in CSS
@@ -62,6 +65,7 @@ const THEME_PALETTES = {
 
 export default function App() {
   // --- STATE ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -81,11 +85,9 @@ export default function App() {
 
   const [visiblePrompts, setVisiblePrompts] = useState(MASTER_PROMPTS.slice(0, 6));
 
-  // ADMIN MODE (Reverted from God Mode)
+  // ADMIN MODE
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const [loginError, setLoginError] = useState(false);
   
   const [isIncognito, setIsIncognito] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -282,23 +284,9 @@ export default function App() {
         setIsAdmin(false);
     } else {
         setShowAdminLogin(true);
-        setLoginError(false);
-        setAdminPasswordInput('');
     }
   };
 
-  const handleAdminLoginSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (adminPasswordInput === "000000") {
-        setIsAdmin(true);
-        setShowAdminLogin(false);
-        setAdminPasswordInput('');
-        setLoginError(false);
-    } else {
-        setLoginError(true);
-        setTimeout(() => setLoginError(false), 500);
-    }
-  };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -535,6 +523,7 @@ export default function App() {
      };
   }, [isAdmin, settings.currentPalette, settings.theme]);
 
+  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
 
   return (
     <div className={`flex h-screen font-sans overflow-hidden bg-[var(--bg-body)] text-[var(--color-text-base)] transition-colors duration-300`}>
@@ -729,43 +718,17 @@ export default function App() {
              <button onClick={() => setShowPromptMenu(!showPromptMenu)} className="text-xs font-medium opacity-40 hover:opacity-100 transition-opacity text-[var(--color-text-muted)]">Suggestions</button>
            </div>
         </footer>
-
-        {/* Admin Login Modal */}
-        {showAdminLogin && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-              <div className="app-panel border-red-500/50 shadow-[0_0_50px_rgba(255,0,0,0.2)] max-w-sm w-full p-6 rounded-2xl relative overflow-hidden">
-                   <div className="text-center mb-6">
-                       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 border border-red-500/50 mb-4 shadow-[0_0_15px_rgba(255,0,0,0.3)]">
-                           <span className="text-3xl">⚡</span>
-                       </div>
-                       <h2 className="text-xl font-bold text-red-500 tracking-widest uppercase">Admin Login</h2>
-                       <p className="text-[10px] text-red-400/70 font-mono mt-1">ENTER PASSCODE TO UNLOCK</p>
-                   </div>
-                   
-                   <form onSubmit={handleAdminLoginSubmit}>
-                       <div className="mb-6 relative">
-                           <input 
-                              autoFocus
-                              type="password" 
-                              value={adminPasswordInput}
-                              onChange={e => setAdminPasswordInput(e.target.value)}
-                              className={`w-full bg-black/20 border-2 ${loginError ? 'border-red-600 animate-shake' : 'border-red-500/30 focus:border-red-500'} rounded-xl px-4 py-3 text-center tracking-[0.5em] font-mono text-lg text-white placeholder-red-500/20 outline-none transition-all`}
-                              placeholder="••••••"
-                           />
-                       </div>
-                       
-                       <div className="flex gap-3">
-                           <button type="button" onClick={() => { setShowAdminLogin(false); setAdminPasswordInput(''); setLoginError(false); }} className="flex-1 py-3 rounded-xl border border-red-500/20 text-red-500/70 hover:bg-red-500/10 font-bold text-sm transition-colors">ABORT</button>
-                           <button type="submit" className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all">AUTHENTICATE</button>
-                       </div>
-                   </form>
-              </div>
-          </div>
-        )}
       
       {/* Modals for App.tsx itself (AppPreviewModal for non-Playground-generated app previews) */}
       <ApkGuideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isAdmin={isAdmin} />
       <AppPreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} files={previewFiles} isAdmin={isAdmin} />
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal 
+         isOpen={showAdminLogin} 
+         onClose={() => setShowAdminLogin(false)} 
+         onSuccess={() => setIsAdmin(true)} 
+      />
 
       {/* PlaygroundScreen modal restored here */}
       <PlaygroundScreen isOpen={isPlaygroundOpen} onClose={() => setIsPlaygroundOpen(false)} isAdmin={isAdmin} themeColors={themeColors} aiName={aiName} />

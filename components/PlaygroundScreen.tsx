@@ -354,6 +354,35 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
       });
   };
 
+  const handleDownloadZip = async () => {
+    if (!files || !window.JSZip) return;
+
+    // Create a temporary copy of files that includes any unsaved changes from the active editor
+    const filesToZip = { ...files };
+    if (activeFilename && editedFileContent !== files[activeFilename]) {
+      filesToZip[activeFilename] = editedFileContent;
+    }
+
+    const zip = new window.JSZip();
+    Object.entries(filesToZip).forEach(([filename, content]) => {
+      zip.file(filename, content);
+    });
+
+    try {
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "playground-project.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Failed to generate zip file", e);
+    }
+  };
+
   const handleOpenNewTab = () => {
     if (!previewUrl) return;
     window.open(previewUrl, '_blank');
@@ -385,6 +414,11 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
             {files && (
               <button onClick={handleSaveApp} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Save">
                 <SvgIcon className="fas fa-save w-4 h-4" />
+              </button>
+            )}
+            {files && (
+              <button onClick={handleDownloadZip} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Download ZIP">
+                <SvgIcon className="fas fa-file-archive w-4 h-4" />
               </button>
             )}
             <button onClick={() => setIsSavedAppsModalOpen(true)} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Load">
