@@ -591,17 +591,17 @@ export default function App() {
           </div>
         </header>
 
-        <main ref={chatContainerRef} onScroll={handleScroll} className="relative z-10 flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth">
+        <main ref={chatContainerRef} onScroll={handleScroll} className="relative z-10 flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 scroll-smooth">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col max-w-full ${msg.role === Role.USER ? 'items-end' : 'items-start'}`}>
-              <div className="flex items-end gap-3 max-w-full group relative">
+              <div className="flex items-end gap-3 w-full sm:max-w-[85%] group relative">
                 {msg.role === Role.MODEL && (
                    <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-input-bg)] shadow-inner overflow-hidden flex-shrink-0`}>
                       <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${themeColors.accent}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clipRule="evenodd" /></svg>
                    </div>
                 )}
                 
-                <div className={`relative px-5 py-4 text-[15px] leading-relaxed max-w-[85%] 
+                <div className={`relative px-5 py-4 text-[15px] leading-relaxed w-full
                   ${msg.role === Role.USER 
                     ? `${themeColors.userBubble}` 
                     : `${themeColors.aiBubble}`
@@ -667,8 +667,8 @@ export default function App() {
           <div ref={messagesEndRef} className="h-4" />
         </main>
 
-        <footer className={`flex-none p-4 sm:p-6 z-20`}>
-           <div className={`max-w-4xl mx-auto relative app-panel rounded-3xl p-3 flex items-center gap-2 shadow-2xl shadow-panel-glow`}>
+        <footer className={`flex-none p-2 sm:p-4 z-20`}>
+           <div className={`max-w-4xl mx-auto relative app-panel rounded-2xl sm:rounded-3xl p-1 sm:p-2 flex items-center gap-1 sm:gap-2 shadow-2xl shadow-panel-glow`}>
               {showCommandMenu && (
                  <div ref={commandMenuRef} className="absolute bottom-full left-0 mb-4 w-56 app-panel rounded-2xl overflow-hidden animate-fade-in flex flex-col p-2">
                     {['/make', '/image', '/build'].map(cmd => (
@@ -687,7 +687,7 @@ export default function App() {
                  </div>
               )}
 
-              <button onClick={() => setShowCommandMenu(!showCommandMenu)} className={`p-3 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
+              <button onClick={() => setShowCommandMenu(!showCommandMenu)} className={`hidden sm:block p-3 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
               
               <div className="relative">
                  <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
@@ -699,7 +699,7 @@ export default function App() {
                 placeholder="Message AI..." className="flex-1 bg-transparent border-none focus:ring-0 text-[16px] placeholder-[var(--color-text-muted)] px-2 focus:shadow-input-focus-glow"
               />
 
-              <button onClick={() => setIsLiveActive(true)} className={`p-3 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`} title="Start Live Call">
+              <button onClick={() => setIsLiveActive(true)} className={`hidden sm:block p-3 rounded-full border border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm transition-all duration-150 ease-in-out text-[var(--color-text-muted)]`} title="Start Live Call">
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                  </svg>
@@ -709,7 +709,7 @@ export default function App() {
 
               <button 
                 onClick={handleSend} disabled={!input.trim() && !attachment && !fileContext}
-                className={`p-3 rounded-full transition-all duration-150 ease-in-out ${(!input.trim() && !attachment && !fileContext) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
+                className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-150 ease-in-out ${(!input.trim() && !attachment && !fileContext) ? 'bg-gray-500/20 text-gray-500' : themeColors.button}`}
               >
                 {isLoading ? <div className={`h-5 w-5 border-2 border-[rgba(var(--theme-primary-rgb),0.3)] border-t-[rgb(var(--theme-primary-rgb))] rounded-full animate-spin`} /> : <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>}
               </button>

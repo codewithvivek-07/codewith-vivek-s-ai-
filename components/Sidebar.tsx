@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         className={`fixed md:relative z-40 h-full transform transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col app-panel border-r border-[rgba(var(--color-panel-border-rgb),1)] rounded-r-none rounded-2xl md:rounded-r-none shadow-panel-glow
           ${isOpen ? 'translate-x-0 w-80' : '-translate-x-full md:translate-x-0 w-80 md:w-0 overflow-hidden'}`}
       >
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-4">
           <div className="flex justify-between items-center md:hidden mb-2">
             <span className="font-bold text-xl tracking-tight text-[var(--color-text-base)]">Chats</span>
             <button onClick={toggleSidebar} className="p-2 bg-[var(--color-input-bg)] rounded-full border border-transparent hover:border-[rgba(var(--theme-primary-rgb),0.3)] hover:shadow-neon-sm text-[var(--color-text-muted)] transition-all duration-150 ease-in-out">
@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div
               key={session.id}
               onClick={() => onSelectSession(session.id)}
-              className={`group relative flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all duration-200 border 
+              className={`group relative flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-200 border 
                 ${currentSessionId === session.id 
                   ? `bg-[rgba(var(--theme-primary-rgb),0.1)] border-[rgba(var(--theme-primary-rgb),0.3)] shadow-neon-sm` 
                   : `border-transparent hover:bg-[var(--color-input-bg)] hover:border-[rgba(var(--color-panel-border-rgb),0.3)]`

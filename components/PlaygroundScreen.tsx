@@ -34,8 +34,9 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
   const [playgroundInput, setPlaygroundInput] = useState('');
   const [playgroundLoading, setPlaygroundLoading] = useState(false);
   
-  // Mobile Tab State (New for UI Improvement)
-  const [mobileTab, setMobileTab] = useState<'ide' | 'preview'>('ide'); // 'ide' = Files + Chat, 'preview' = Preview Only
+  // Mobile UI State
+  const [mobileTab, setMobileTab] = useState<'ide' | 'preview'>('ide');
+  const [isFileExplorerOpenMobile, setIsFileExplorerOpenMobile] = useState(true);
 
   // Device view
   const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>(() => {
@@ -43,7 +44,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
             ? localStorage.getItem('playgroundDeviceView') 
             : 'desktop') as 'desktop' | 'tablet' | 'mobile';
   });
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSavedAppsModalOpen, setIsSavedAppsModalOpen] = useState(false);
   const [savedApps, setSavedApps] = useState<SavedApp[]>([]);
 
@@ -150,7 +150,6 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
       setPlaygroundInput('');
       setPlaygroundLoading(false);
       setDeviceView('desktop');
-      setIsFullscreen(false);
       setIsSavedAppsModalOpen(false);
       setConsoleLogs([]);
       setMobileTab('ide');
@@ -393,38 +392,38 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
 
   // --- Render ---
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-[100] flex flex-col bg-[var(--bg-body)] animate-fade-in sm:rounded-3xl overflow-hidden font-sans text-[var(--color-text-base)]">
+    <div ref={overlayRef} className="fixed inset-0 z-[100] flex flex-col bg-[var(--bg-body)] animate-fade-in font-sans text-[var(--color-text-base)]">
        
        {/* 1. Enhanced Header */}
-       <header className={`flex-none h-14 px-4 flex items-center justify-between border-b border-[rgba(var(--color-panel-border-rgb),1)] bg-[rgba(var(--color-panel-bg-rgb),0.8)] backdrop-blur-md z-20 ${themeColors.adminGlow}`}>
+       <header className={`flex-none h-16 px-4 flex items-center justify-between border-b border-[rgba(var(--color-panel-border-rgb),1)] bg-[rgba(var(--color-panel-bg-rgb),0.8)] backdrop-blur-md z-20 ${themeColors.adminGlow}`}>
          <div className="flex items-center gap-3 overflow-hidden">
-            <div className={`p-2 rounded-lg bg-[rgba(var(--theme-primary-rgb),0.1)] text-[rgb(var(--theme-primary-rgb))]`}>
-                <SvgIcon className="fas fa-hammer w-4 h-4" />
+            <div className={`p-3 rounded-lg bg-[rgba(var(--theme-primary-rgb),0.1)] text-[rgb(var(--theme-primary-rgb))]`}>
+                <SvgIcon className="fas fa-hammer w-5 h-5" />
             </div>
             <h2 className="font-bold text-sm sm:text-lg truncate tracking-tight">{playgroundAiName}</h2>
          </div>
 
          {/* Mobile Tab Switcher */}
-         <div className="flex md:hidden bg-[var(--color-input-bg)] rounded-lg p-1 mx-2">
-            <button onClick={() => setMobileTab('ide')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mobileTab === 'ide' ? 'bg-white text-black shadow-sm' : 'text-gray-500'}`}>Files & AI</button>
-            <button onClick={() => setMobileTab('preview')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mobileTab === 'preview' ? 'bg-white text-black shadow-sm' : 'text-gray-500'}`}>Preview</button>
+         <div className="flex md:hidden bg-[var(--color-input-bg)] rounded-lg p-1 mx-2 shadow-inner">
+            <button onClick={() => setMobileTab('ide')} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${mobileTab === 'ide' ? 'bg-[var(--bg-body)] text-[var(--color-text-base)] shadow-sm' : 'text-[var(--color-text-muted)]'}`}>IDE</button>
+            <button onClick={() => setMobileTab('preview')} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${mobileTab === 'preview' ? 'bg-[var(--bg-body)] text-[var(--color-text-base)] shadow-sm' : 'text-[var(--color-text-muted)]'}`}>Preview</button>
          </div>
 
          <div className="flex items-center gap-1 sm:gap-2">
             {files && (
-              <button onClick={handleSaveApp} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Save">
+              <button onClick={handleSaveApp} className="p-3 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Save">
                 <SvgIcon className="fas fa-save w-4 h-4" />
               </button>
             )}
             {files && (
-              <button onClick={handleDownloadZip} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Download ZIP">
+              <button onClick={handleDownloadZip} className="p-3 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Download ZIP">
                 <SvgIcon className="fas fa-file-archive w-4 h-4" />
               </button>
             )}
-            <button onClick={() => setIsSavedAppsModalOpen(true)} className="p-2 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Load">
+            <button onClick={() => setIsSavedAppsModalOpen(true)} className="p-3 hover:bg-[var(--color-input-bg)] rounded-full transition-colors text-[var(--color-text-muted)]" title="Load">
                <SvgIcon className="fas fa-folder-open w-4 h-4" />
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-full transition-colors text-[var(--color-text-muted)] ml-1">
+            <button onClick={onClose} className="p-3 hover:bg-red-500/10 hover:text-red-500 rounded-full transition-colors text-[var(--color-text-muted)] ml-1">
               <SvgIcon className="fas fa-times w-5 h-5" />
             </button>
          </div>
@@ -442,10 +441,17 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
                 md:relative absolute inset-0 z-10 md:z-auto
             `}
           >
-             {/* File Explorer */}
-             <div style={{ height: `${fileExplorerHeight}%` }} className="flex flex-col border-b border-[rgba(var(--color-panel-border-rgb),1)] relative">
-                <div className="px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)] flex justify-between items-center">
-                    <span className="text-xs font-bold uppercase opacity-60">Project Files</span>
+             {/* File Explorer (Mobile Collapsible) */}
+             <div className={`
+                flex flex-col border-b border-[rgba(var(--color-panel-border-rgb),1)] relative 
+                md:h-auto transition-all duration-300 ease-in-out
+                ${isFileExplorerOpenMobile ? 'h-2/5' : 'h-12'}
+             `} style={{ height: isFileExplorerOpenMobile ? undefined : '3rem', flexBasis: isFileExplorerOpenMobile ? `${fileExplorerHeight}%` : undefined }}>
+                <div className="px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)] flex justify-between items-center h-12 flex-shrink-0">
+                    <button className="flex items-center gap-2" onClick={() => setIsFileExplorerOpenMobile(!isFileExplorerOpenMobile)}>
+                      <span className="text-xs font-bold uppercase opacity-60">Project Files</span>
+                      <SvgIcon className={`fas fa-chevron-down w-3 h-3 text-xs opacity-50 transition-transform md:hidden ${!isFileExplorerOpenMobile && 'rotate-180'}`} />
+                    </button>
                     {files && (
                         <div className="flex gap-1">
                             <button onClick={handleNewFile} className="p-1 hover:text-[rgb(var(--theme-primary-rgb))]"><SvgIcon className="fas fa-plus w-3 h-3" /></button>
@@ -489,7 +495,7 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
 
              {/* Chat Section */}
              <div className="flex-1 flex flex-col min-h-0 bg-[var(--bg-body)]">
-                <div className="px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)]">
+                <div className="px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)] h-12 flex items-center flex-shrink-0">
                     <span className="text-xs font-bold uppercase opacity-60">AI Assistant</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -549,19 +555,19 @@ const PlaygroundScreen: React.FC<PlaygroundProps> = ({ isOpen, onClose, isAdmin,
             `}
           >
              {/* Preview Header with Open in Browser Button */}
-             <div className="flex-none flex justify-between items-center px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)]">
+             <div className="flex-none flex justify-between items-center px-4 py-2 bg-[var(--color-input-bg)] border-b border-[rgba(var(--color-panel-border-rgb),0.5)] h-16">
                 <span className="text-xs font-bold uppercase opacity-60">Live Preview</span>
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={handleOpenNewTab}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-panel-border-rgb)] hover:bg-[rgba(var(--theme-primary-rgb),0.1)] hover:text-[rgb(var(--theme-primary-rgb))] rounded-md text-xs font-bold transition-all border border-transparent"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(var(--color-panel-border-rgb),0.5)] hover:bg-[rgba(var(--theme-primary-rgb),0.1)] hover:text-[rgb(var(--theme-primary-rgb))] rounded-md text-xs font-bold transition-all border border-transparent"
                         title="Open in new tab"
                     >
                         <SvgIcon className="fas fa-external-link-alt" />
                         <span className="hidden sm:inline">Open in Browser</span>
                     </button>
 
-                    <div className="flex bg-[var(--color-panel-border-rgb)] rounded-md p-0.5">
+                    <div className="flex bg-[rgba(var(--color-panel-border-rgb),0.5)] rounded-md p-0.5">
                         {(['desktop', 'tablet', 'mobile'] as const).map(d => (
                             <button key={d} onClick={() => setDeviceView(d)} className={`p-1.5 rounded text-xs transition-colors ${deviceView === d ? 'bg-[var(--bg-body)] shadow-sm' : 'hover:opacity-70'}`}>
                                 <SvgIcon className={`fas fa-${d === 'desktop' ? 'desktop' : d === 'tablet' ? 'tablet-alt' : 'mobile-alt'}`} />

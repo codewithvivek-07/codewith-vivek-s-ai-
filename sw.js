@@ -3,7 +3,6 @@ self.addEventListener('install', (e) => {
     caches.open('x-fire-store').then((cache) => cache.addAll([
       '/',
       '/index.html',
-      '/index.tsx',
     ])),
   );
 });
